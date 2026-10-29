@@ -44,13 +44,10 @@
 
 
 DAC_CHANNEL DAC_CHANNEL_A=0, DAC_CHANNEL_B=1, DAC_CHANNEL_C=2, DAC_CHANNEL_D=3;
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-DAC_CHANNEL DAC_CHANNEL_E=4, DAC_CHANNEL_F=5, DAC_CHANNEL_G=6, DAC_CHANNEL_H=7;
-#endif
 
 namespace OC {
 
-#if defined(ARDUINO_TEENSY41) || defined(VOR)
+#if defined(VOR)
 int DAC::kOctaveZero = 3;
 #endif
 
@@ -62,21 +59,7 @@ void DAC::Init(const CalibrationData *calibration_data, const AutotuneCalibratio
   autotune_calibration_data_ = autotune_calibration_data;
 
   if (flip180) {
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-    DAC_CHANNEL temp1 = DAC_CHANNEL_A, temp2 = DAC_CHANNEL_B,
-                temp3 = DAC_CHANNEL_C, temp4 = DAC_CHANNEL_D;
-
-    DAC_CHANNEL_A = DAC_CHANNEL_H;
-    DAC_CHANNEL_B = DAC_CHANNEL_G;
-    DAC_CHANNEL_C = DAC_CHANNEL_F;
-    DAC_CHANNEL_D = DAC_CHANNEL_E;
-    DAC_CHANNEL_E = temp4;
-    DAC_CHANNEL_F = temp3;
-    DAC_CHANNEL_G = temp2;
-    DAC_CHANNEL_H = temp1;
-#else
     DAC_CHANNEL_A=3, DAC_CHANNEL_B=2, DAC_CHANNEL_C=1, DAC_CHANNEL_D=0;
-#endif
   }
 
   // set up DAC pins 
@@ -107,20 +90,6 @@ void DAC::Init(const CalibrationData *calibration_data, const AutotuneCalibratio
 #elif defined(__IMXRT1062__)
   #if defined(ARDUINO_TEENSY40)
   IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00 = 3; // DAC CS pin controlled by SPI
-  #elif defined(ARDUINO_TEENSY41)
-  if (DAC8568_Uses_SPI) {
-    // Assume DAC8568_Vref_enable() already called by  main program startup,
-    // so we don't need to do any more hardware init, and calling SPI.begin()
-    // again could cause problems.
-  } else {
-    IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00 = 3; // DAC CS pin controlled by SPI
-  }
-  if (ADC33131D_Uses_FlexIO) {
-    // ADC33131D wants pin 12 for data input, but SPI.begin() takes it away
-    // reconfigure pin mux to return pin 12 control to FlexIO
-    IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_01 = 4 | 0x10;
-    IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_01 = 0x100C0;
-  }
   #endif
 #endif
 
@@ -147,10 +116,10 @@ void DAC::set_Vbias(uint32_t data) {
 
 #elif defined(__IMXRT1062__)
 void DAC::init_Vbias() {
-  // TODO Teensy 4.1
+  // No variable bias on this target.
 }
 void DAC::set_Vbias(uint32_t data) {
-  // TODO Teensy 4.1
+  // No variable bias on this target.
 }
 
 #endif
@@ -234,18 +203,6 @@ void SPI_init() {
   }
 }
 
-#if defined(ARDUINO_TEENSY41)
-void OC::DAC::DAC8568_Vref_enable() {
-  Serial.println("DAC8568 Vref enable");
-  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00 = 3; // DAC CS pin controlled by SPI
-  SPI.beginTransaction(SPISettings(24000000, MSBFIRST, SPI_MODE1));
-  LPSPI4_TCR = (LPSPI4_TCR & 0xF8000000) | LPSPI_TCR_FRAMESZ(31)
-    | LPSPI_TCR_PCS(0) | LPSPI_TCR_RXMSK;
-  delayMicroseconds(10);
-  dac8568_raw_write(0x08000001); // turn on Vref (2.5V ±0.004%), static mode
-  delay(5);
-}
-#endif
 
 #endif // __IMXRT1062__
 

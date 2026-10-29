@@ -5,9 +5,6 @@
 #include <algorithm>
 
 ADC_CHANNEL ADC_CHANNEL_1=0, ADC_CHANNEL_2=1, ADC_CHANNEL_3=2, ADC_CHANNEL_4=3;
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-ADC_CHANNEL ADC_CHANNEL_5=4, ADC_CHANNEL_6=5, ADC_CHANNEL_7=6, ADC_CHANNEL_8=7;
-#endif
 
 namespace OC {
 
@@ -76,22 +73,6 @@ static PROGMEM const uint8_t adc2_pin_to_channel[] = {
         255,    // 25/A11 AD_B0_13 - can't use this pin!
         3,      // 26/A12 AD_B1_14
         4,      // 27/A13 AD_B1_15
-#ifdef ARDUINO_TEENSY41
-        255,    // 28
-        255,    // 29
-        255,    // 30
-        255,    // 31
-        255,    // 32
-        255,    // 33
-        255,    // 34
-        255,    // 35
-        255,    // 36
-        255,    // 37
-        1,      // 38/A14 AD_B1_12
-        2,      // 39/A15 AD_B1_13
-        9,      // 40/A16 AD_B1_04
-        10,     // 41/A17 AD_B1_05
-#endif
 };
 #endif // __IMXRT1062__
 
@@ -100,21 +81,7 @@ FLASHMEM
 /*static*/ void ADC::Init(CalibrationData *calibration_data, bool flip180)
 {
   if (flip180) {
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-    ADC_CHANNEL temp1 = ADC_CHANNEL_1, temp2 = ADC_CHANNEL_2,
-                temp3 = ADC_CHANNEL_3, temp4 = ADC_CHANNEL_4;
-
-    ADC_CHANNEL_1 = ADC_CHANNEL_8;
-    ADC_CHANNEL_2 = ADC_CHANNEL_7;
-    ADC_CHANNEL_3 = ADC_CHANNEL_6;
-    ADC_CHANNEL_4 = ADC_CHANNEL_5;
-    ADC_CHANNEL_5 = temp4;
-    ADC_CHANNEL_6 = temp3;
-    ADC_CHANNEL_7 = temp2;
-    ADC_CHANNEL_8 = temp1;
-#else
     ADC_CHANNEL_1=3, ADC_CHANNEL_2=2, ADC_CHANNEL_3=1, ADC_CHANNEL_4=0;
-#endif
   }
 
   calibration_data_ = calibration_data;
@@ -206,21 +173,10 @@ void ADC::Init_DMA() {
 #elif defined(__IMXRT1062__)
 
 static void Init_Teensy4_builtin_ADC();
-#if defined(ARDUINO_TEENSY41)
-static void Init_Teensy41_ADC33131D_chip();
-#endif
 
 FLASHMEM
 void ADC::Init_DMA() {
-  #if defined(ARDUINO_TEENSY41)
-  if (ADC33131D_Uses_FlexIO) {
-    Init_Teensy41_ADC33131D_chip();
-  } else {
-  #endif
     Init_Teensy4_builtin_ADC();
-  #if defined(ARDUINO_TEENSY41)
-  }
-  #endif
 }
 
 FLASHMEM
@@ -347,141 +303,6 @@ static void Init_Teensy4_builtin_ADC() {
 #define FLEXIO_SHIFTCTL_SHIFT_ON_FALLING_EDGE                   FLEXIO_SHIFTCTL_TIMPOL
 #endif
 
-#if defined(ARDUINO_TEENSY41)
-static void Init_Teensy41_ADC33131D_chip() {
-  // configure a timer to trigger FlexIO
-  const int comp1 = ((float)F_BUS_ACTUAL) / (ADC33131_SAMPLE_RATE) / 2.0f + 0.5f;
-  TMR4_ENBL &= ~(1<<3);
-  TMR4_SCTRL3 = TMR_SCTRL_OEN | TMR_SCTRL_FORCE;
-  TMR4_CSCTRL3 = TMR_CSCTRL_CL1(1) | TMR_CSCTRL_TCF1EN;
-  TMR4_CNTR3 = 0;
-  TMR4_LOAD3 = 0;
-  TMR4_COMP13 = comp1;
-  TMR4_CMPLD13 = comp1;
-  TMR4_CTRL3 = TMR_CTRL_CM(1) | TMR_CTRL_PCS(8) | TMR_CTRL_LENGTH | TMR_CTRL_OUTMODE(3);
-  TMR4_DMA3 = TMR_DMA_CMPLD1DE;
-  TMR4_CNTR3 = 0;
-  TMR4_ENBL |= (1<<3);
-
-  // connect the timer output the FlexIO2 EXT input 0
-  CCM_CCGR2 |= CCM_CCGR2_XBAR1(CCM_CCGR_ON);
-  xbar_connect(XBARA1_IN_QTIMER4_TIMER3, XBARA1_OUT_FLEXIO2_TRIGGER_IN0);
-
-  // turn on FlexIO2 clock (120 MHz)
-  CCM_CSCMR2 |= CCM_CSCMR2_FLEXIO2_CLK_SEL(3); // 480 MHz from USB PLL
-  CCM_CS1CDR = (CCM_CS1CDR
-    & ~(CCM_CS1CDR_FLEXIO2_CLK_PRED(7) | CCM_CS1CDR_FLEXIO2_CLK_PODF(7)))
-    | CCM_CS1CDR_FLEXIO2_CLK_PRED(1) | CCM_CS1CDR_FLEXIO2_CLK_PODF(1);
-  CCM_CCGR3 |= CCM_CCGR3_FLEXIO2(CCM_CCGR_ON);
-
-  // take control of pins
-  const int a2_flexio_pin =  12;  // Arduino pin 32, B0_12, Flexio2 pin 12
-  const int a1_flexio_pin =  10;  // Arduino pin  6, B0_10, Flexio2 pin 10
-  const int a0_flexio_pin =  17;  // Arduino pin  7, B1_01, Flexio2 pin 17
-  const int cs_flexio_pin =  11;  // Arduino pin  9, B0_11, Flexio2 pin 11
-  const int data_flexio_pin = 1;  // Arduino pin 12, B0_01, Flexio2 pin  1
-  const int sck_flexio_pin = 16;  // Arduino pin  8, B1_00, Flexio2 pin 16
-  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_12 = 4; // page 516
-  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_10 = 4; // page 514
-  IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_01 = 4; // page 521
-  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_11 = 4; // page 515
-  IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_01 = 4 | 0x10; // page 505
-  IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_01 = 0x100C0;
-  IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_00 = 4; // page 520
-
-  // configure FlexIO timers
-  IMXRT_FLEXIO_t *flexio = (IMXRT_FLEXIO_t *)IMXRT_FLEXIO2_ADDRESS;
-  // disable and reset, in case of re-init
-  flexio->CTRL &= ~FLEXIO_CTRL_FLEXEN;
-  flexio->CTRL |= FLEXIO_CTRL_SWRST;
-  flexio->CTRL &= ~FLEXIO_CTRL_SWRST;
-
-  const int baud_timer = 0;
-  const int cs_timer = 1;
-  const int mux_timer = 2;
-  flexio->TIMCMP[baud_timer] = (ADC33131_SAMPLE_RATE > 350000) ? 0x1F02 : 0x1F03;
-  flexio->TIMCTL[baud_timer] =
-    FLEXIO_TIMCTL_TRIGGER_EXTERNAL(0) |
-    FLEXIO_TIMCTL_TRIGGER_ACTIVE_LOW |
-    FLEXIO_TIMCTL_PINMODE_OUTPUT |
-    FLEXIO_TIMCTL_PINSEL(sck_flexio_pin) |
-    FLEXIO_TIMCTL_MODE_8BIT_BAUD;
-  flexio->TIMCFG[baud_timer] = FLEXIO_TIMCFG_OUTPUT_LOW_WHEN_ENABLED |
-    FLEXIO_TIMCFG_DISABLE_ON_8BIT_MATCH |
-    FLEXIO_TIMCFG_ENABLE_ON_TRIGGER_RISING |
-    FLEXIO_TIMCFG_STOPBIT_ENABLE_ON_TIMER_DISABLE |
-    FLEXIO_TIMCFG_STARTBIT_ENABLED;
-  flexio->TIMCMP[cs_timer] = 0xFFFF;
-  flexio->TIMCTL[cs_timer] = FLEXIO_TIMCTL_PINMODE_OUTPUT |
-    FLEXIO_TIMCTL_PINSEL(cs_flexio_pin) |
-    FLEXIO_TIMCTL_PIN_ACTIVE_LOW |
-    FLEXIO_TIMCTL_MODE_16BIT;
-  flexio->TIMCFG[cs_timer] = FLEXIO_TIMCFG_OUTPUT_HIGH_WHEN_ENABLED |
-    FLEXIO_TIMCFG_DISABLE_WHEN_PRIOR_TIMER_DISABLES |
-    FLEXIO_TIMCFG_ENABLE_WHEN_PRIOR_TIMER_ENABLES;
-  flexio->TIMCMP[mux_timer] = 0x3F01;
-  flexio->TIMCTL[mux_timer] = FLEXIO_TIMCTL_MODE_8BIT_BAUD |
-    FLEXIO_TIMCTL_TRIGGER_EXTERNAL(0) |
-    FLEXIO_TIMCTL_TRIGGER_ACTIVE_HIGH;
-  flexio->TIMCFG[mux_timer] = FLEXIO_TIMCFG_DEC_ON_TRIGGER_CHANGE_SHIFT_ON_TRIGGER |
-    FLEXIO_TIMCFG_ENABLE_ALWAYS | FLEXIO_TIMCFG_DISABLE_NEVER;
-
-  // configure FlexIO data shifters
-  const int data_shifter = 0;
-  const int a0_shifter = 1;
-  const int a1_shifter = 2;
-  const int a2_shifter = 3;
-  flexio->SHIFTCFG[a0_shifter] = 0;
-  flexio->SHIFTCTL[a0_shifter] = FLEXIO_SHIFTCTL_MODE_TRANSMIT |
-    FLEXIO_SHIFTCTL_SHIFT_ON_RISING_EDGE |
-    FLEXIO_SHIFTCTL_PINMODE_OUTPUT |
-    FLEXIO_SHIFTCTL_TIMSEL(mux_timer) |
-    FLEXIO_SHIFTCTL_PINSEL(a0_flexio_pin);
-  flexio->SHIFTBUF[a0_shifter] = 0xAAAAAAAA;
-  flexio->SHIFTCFG[a1_shifter] = 0;
-  flexio->SHIFTCTL[a1_shifter] = FLEXIO_SHIFTCTL_MODE_TRANSMIT |
-    FLEXIO_SHIFTCTL_SHIFT_ON_RISING_EDGE |
-    FLEXIO_SHIFTCTL_PINMODE_OUTPUT |
-    FLEXIO_SHIFTCTL_TIMSEL(mux_timer) |
-    FLEXIO_SHIFTCTL_PINSEL(a1_flexio_pin);
-  flexio->SHIFTBUF[a1_shifter] = 0xCCCCCCCC;
-  flexio->SHIFTCFG[a2_shifter] = 0;
-  flexio->SHIFTCTL[a2_shifter] = FLEXIO_SHIFTCTL_MODE_TRANSMIT |
-    FLEXIO_SHIFTCTL_SHIFT_ON_RISING_EDGE |
-    FLEXIO_SHIFTCTL_PINMODE_OUTPUT |
-    FLEXIO_SHIFTCTL_TIMSEL(mux_timer) |
-    FLEXIO_SHIFTCTL_PINSEL(a2_flexio_pin);
-  flexio->SHIFTBUF[a2_shifter] = 0xF0F0F0F0;
-  flexio->SHIFTCFG[data_shifter] = 0;
-  flexio->SHIFTCTL[data_shifter] = FLEXIO_SHIFTCTL_MODE_RECEIVE |
-    FLEXIO_SHIFTCTL_SHIFT_ON_FALLING_EDGE |
-    FLEXIO_SHIFTCTL_TIMSEL(baud_timer) |
-    FLEXIO_SHIFTCTL_PINSEL(data_flexio_pin);
-  flexio->SHIFTSDEN |= (1 << data_shifter);
-
-  // use a DMA channel to capture FlexIO output
-  dma0.begin();
-  dma0.TCD->SADDR = &(flexio->SHIFTBUFBIS[data_shifter]);
-  dma0.TCD->SOFF = 0;
-  dma0.TCD->ATTR = DMA_TCD_ATTR_SSIZE(1) | DMA_TCD_ATTR_DSIZE(1);
-  dma0.TCD->NBYTES_MLNO = DMA_TCD_NBYTES_MLOFFYES_NBYTES(2);
-  dma0.TCD->SLAST = 0;
-  dma0.TCD->DADDR = adc_buffer;
-  dma0.TCD->DOFF = 2;
-  dma0.TCD->CITER_ELINKNO = sizeof(adc_buffer) / 2;
-  dma0.TCD->DLASTSGA = -sizeof(adc_buffer);
-  dma0.TCD->BITER_ELINKNO = sizeof(adc_buffer) / 2;
-  dma0.TCD->CSR = 0;
-  dma0.triggerAtHardwareEvent(DMAMUX_SOURCE_FLEXIO2_REQUEST0); // request # of data_shifter
-  dma0.enable();
-
-  // start FlexIO running
-  flexio->SHIFTSTAT = 0xFF;
-  flexio->SHIFTERR = 0xFF;
-  flexio->TIMSTAT = 0xFF;
-  flexio->CTRL = FLEXIO_CTRL_FLEXEN;
-}
-#endif // ARDUINO_TEENSY41
 
 #endif // __IMXRT1062__
 
@@ -564,54 +385,6 @@ void ADC::Read(IOFrame *ioframe)
   arm_dcache_delete(adc_buffer, sizeof(adc_buffer));
   //asm("dsb");
 
-  #if defined(ARDUINO_TEENSY41)
-  if (ADC33131D_Uses_FlexIO) {
-    // FlexIO DMA separately deposits each 16 bit reading into memory, so we
-    // first need to figure out how many full 8 reading frames we have (if any).
-    static uint32_t old_poffset = 0;
-    uint32_t poffset = ((uint32_t)p - (uint32_t)adc_buffer) & 0xFFF0;
-    size_t count = ((poffset - old_poffset) % sizeof(adc_buffer)) / sizeof(adc33131_frame_t);
-    if (count > 0) {
-      // if we got any full ADC33131D frames, average them together and update
-      int32_t sum[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-      for (size_t i=0; i < count; i++) {
-        const adc33131_frame_t *data = (adc33131_frame_t *)((uint32_t)adc_buffer +
-          (poffset + i * sizeof(adc33131_frame_t)) % sizeof(adc_buffer));
-        sum[0] += data->in[0];
-        sum[1] += data->in[1];
-        sum[2] += data->in[2];
-        sum[3] += data->in[3];
-        sum[4] += data->in[4];
-        sum[5] += data->in[5];
-        sum[6] += data->in[6];
-        sum[7] += data->in[7];
-      }
-      // ADC33131D is differential, so let's be paranoid and check for negative
-      for (size_t j=0; j < 8; j++) {
-        if (sum[j] < 0) sum[j] = 0;
-      }
-      #if 0
-      static elapsedMicros usec = 0;
-      Serial.printf("%2u  %02X  %3u: ", count, poffset, (int)usec);
-      usec = 0;
-      for (size_t j=0; j < 8; j++) Serial.printf("%4x  ", sum[j] / count);
-      Serial.println();
-      #endif
-      const int mult = 2;
-      // rows are inverted because of reasons, and now it hurts to change it
-      update(4, sum[0] * mult / count);
-      update(5, sum[1] * mult / count);
-      update(6, sum[2] * mult / count);
-      update(7, sum[3] * mult / count);
-      update(0, sum[4] * mult / count);
-      update(1, sum[5] * mult / count);
-      update(2, sum[6] * mult / count);
-      update(3, sum[7] * mult / count);
-      old_poffset = (old_poffset + count * sizeof(adc33131_frame_t)) % sizeof(adc_buffer);
-    }
-    return;
-  }
-  #endif
 
   uint32_t sum[4] = {0, 0, 0, 0};
   int idx = p - adc_buffer;
@@ -630,12 +403,6 @@ void ADC::Read(IOFrame *ioframe)
     update(1, sum[1] * mult / count);
     update(2, sum[2] * mult / count);
     update(3, sum[3] * mult / count);
-#if defined(ARDUINO_TEENSY41)
-    update(4, sum[0] * mult / count);
-    update(5, sum[1] * mult / count);
-    update(6, sum[2] * mult / count);
-    update(7, sum[3] * mult / count);
-#endif
 
     old_idx = idx;
   }
@@ -650,30 +417,7 @@ void ADC::Read(IOFrame *ioframe)
   }
 }
 
-#if defined(ARDUINO_TEENSY41) // Teensy 4.1 - A17 pin identifies PCB hardware
-static
-float read_id_voltage() {
-  const unsigned int count = 50;
-  unsigned int sum=0;
-  delayMicroseconds(10);
-  for (unsigned int i=0; i < count; i++) {
-    sum += analogRead(A17);
-  }
-  return (float)sum * (3.3f / 1023.0f / (float)count);
-}
-
-float ADC::Read_ID_Voltage() {
-  pinMode(A17, INPUT_PULLUP);
-  float volts_pullup = read_id_voltage();
-  pinMode(A17, INPUT_PULLDOWN);
-  float volts_pulldown = read_id_voltage();
-  pinMode(A17, INPUT_DISABLE);
-  if (volts_pullup - volts_pulldown > 2.5f) return 0; // pin not connected
-  return read_id_voltage();
-}
-#else // Teensy 4.0
 float ADC::Read_ID_Voltage() { return 0; }
-#endif
 
 
 #endif // __IMXRT1062__
@@ -690,34 +434,5 @@ float ADC::Read_ID_Voltage() { return 0; }
   }
 }
 
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-/*static*/ FLASHMEM void ADC::ADC33131D_Vref_calibrate() {
-  // Called only at startup - use GPIO bitbashing, FlexIO later takes control of pins
-  const int cs_pin = 9;
-  const int clk_pin = 8;
-  const int data_pin = 12;
-  pinMode(cs_pin, OUTPUT);
-  digitalWriteFast(cs_pin, HIGH);
-  pinMode(clk_pin, OUTPUT);
-  digitalWriteFast(clk_pin, LOW);
-  pinMode(data_pin, INPUT_PULLUP);
-  delay(650);
-  // ADC33131D Recalibrate Command Timing Diagram, Figure 7-3, page 42
-  digitalWriteFast(cs_pin, LOW);
-  delayNanoseconds(100);
-  for (int i=0; i < 1024; i++) {
-    delayNanoseconds(25);
-    digitalWriteFast(clk_pin, HIGH);
-    delayNanoseconds(25);
-    digitalWriteFast(clk_pin, LOW);
-  }
-  delay(5);
-  elapsedMillis msec = 0;
-  while (digitalRead(data_pin) == LOW && msec < 750) ; // wait, typically 496 ms
-  //Serial.printf("ADC33131D_Vref_calibrate waited %u ms\n", (int)msec);
-  delayNanoseconds(100);
-  digitalWriteFast(cs_pin, HIGH);
-}
-#endif
 
 }; // namespace OC

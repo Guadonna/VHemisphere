@@ -94,17 +94,10 @@ const char* const int_seq_CV_destinations[] = {
 
 using ASR_pitch = int16_t;
 
-#ifdef ARDUINO_TEENSY41
-  static constexpr size_t CVInput1 = 4;
-  static constexpr size_t CVInput2 = 5;
-  static constexpr size_t CVInput3 = 6;
-  static constexpr size_t CVInput4 = 7;
-#else
   static constexpr size_t CVInput1 = 0;
   static constexpr size_t CVInput2 = 1;
   static constexpr size_t CVInput3 = 2;
   static constexpr size_t CVInput4 = 3;
-#endif
 
 class ASR
 : public settings::SettingsBase<ASR, ASR_SETTING_LAST>

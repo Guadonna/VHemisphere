@@ -11,12 +11,12 @@ nav_order: 2
 
 ## Q: How do I switch Apps?
 
-A: In v2.0+, hold 'Z' or 'A' (aka the UP button on O_C) and press the Right Encoder to find the main App Menu. See the [UI Gestures](Hemisphere-Gestures) page for more info.
+A: In v2.0+, hold UP and press the Right Encoder to find the main App Menu. See the [UI Gestures](Hemisphere-Gestures) page for more info.
 _(in v1.x firmwares, Long-press the Right Encoder for main menu.)_
 
 ## Q: Where are all the Applets?
 
-A: The _Applets_ can be found within the **Hemispheres** App on O_C or [**Quadrants**](Quadrants) App on ORN8. All the same CV applets are available on both, for T4.0 or T4.1. Most updates can be backported to T3.2, excluding any extra settings storage.
+A: Select the Hemisphere app to run two CV applets on the four-output Teensy 4.0 module.
 
 ## Q: How do I set the default app on startup?
 
@@ -32,7 +32,7 @@ Check [the wiki](https://github.com/djphazer/O_C-Phazerville/wiki) for tips on d
 
 ## Q: What is AuxButton?
 
-A: In Hemispheres/Quadrants, after pressing the encoder button to _highlight an applet parameter for editing_, the corresponding select button (UP or DOWN on O_C, or A/B/X/Y on ORN8) invokes a _secondary action_ in some places, often indicated by a dotted line cursor instead of a solid line. This contextual override provides additional UI actions with a very limited set of controls. See also: [**UI Gestures**](Hemisphere-Gestures)
+A: In Hemisphere, after pressing the encoder button to _highlight an applet parameter for editing_, the corresponding select button (UP or DOWN) invokes a _secondary action_ in some places, often indicated by a dotted line cursor instead of a solid line. This contextual override provides additional UI actions with a very limited set of controls. See also: [**UI Gestures**](Hemisphere-Gestures)
 
 <hr>
 

@@ -11,7 +11,6 @@ If applets like Stairs, Carpeggio or Shredder appear unresponsive, you might nee
 
 * To check output calibration, use the **Voltage** applet.
 * To check input calibration, use **Scope** applet.
-* (T41-specific) To check MIDI, send Clock to it on any of the interfaces (USB Device, USB Host, serial MIDI) and verify that the Clock starts and is sent back out all the other interfaces.
 
 ***
 
@@ -24,4 +23,4 @@ To save the encoder reversal setting, you will need to scroll through the entire
 ***
 ## Still stuck?
 
-If you've encountered a reproducible problem with an App or Applet, I'm here to help! Please mention the **full filename** of the firmware HEX file you used and your specific hardware model/vendor when filing an [Issue](https://github.com/djphazer/O_C-Phazerville/issues) on Github.
+If you've encountered a reproducible problem with an App or Applet, I'm here to help! Please mention the **full filename** of the firmware HEX file you used and your specific hardware model/vendor when filing an [Issue](https://github.com/Guadonna/VHemisphere/issues) on Github.

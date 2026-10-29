@@ -5,7 +5,6 @@
 
 // All platforms now have dynamic pinouts.
 // Controls can be remapped, and flip_180 is a calibration flag.
-// Teensy 4.1 has different pinouts depending on voltage at pin 41/A17
 
 // extern uint8_t CV1, CV2, CV3, CV4;
 extern uint8_t TR1, TR2, TR3, TR4;
@@ -23,24 +22,15 @@ extern bool I2S2_Audio_DAC;
 extern bool I2C_Expansion;
 extern bool MIDI_Uses_Serial8;
 extern bool SDcard_Ready;
-#ifdef ARDUINO_TEENSY41
-extern bool DAC_20Vpp;
-extern bool CalSynthXL;
-extern bool NLMSerge;
-extern bool DAC_is_inverted;
-#else
 static constexpr bool DAC_20Vpp = false;
 static constexpr bool CalSynthXL = false;
 static constexpr bool DAC_is_inverted = false;
 static constexpr bool NLMSerge = false;
-#endif
 
 #ifdef NORTHERNLIGHT
 static constexpr bool NorthernLightModular = true;
-#elif !defined(ARDUINO_TEENSY41)
-static constexpr bool NorthernLightModular = false;
 #else
-extern bool NorthernLightModular;
+static constexpr bool NorthernLightModular = false;
 #endif
 
 // OLED CS is active low

@@ -3,11 +3,7 @@ namespace menu = OC::menu;
 
 #ifndef NO_HEMISPHERE
 
-#ifdef ARDUINO_TEENSY41
-#include "Quadrants.h"
-#else
 #include "Hemisphere.h"
-#endif
 
 #endif
 
@@ -62,11 +58,7 @@ namespace OC {
 static AppContainer<void // this space intentionally left blank
   , AppSettings
 #ifndef NO_HEMISPHERE
-  #ifdef ARDUINO_TEENSY41
-  , AppQuadrants
-  #else
   , AppHemisphere
-  #endif
 #endif
 #ifdef ENABLE_APP_CALIBR8OR
   , AppCalibr8or

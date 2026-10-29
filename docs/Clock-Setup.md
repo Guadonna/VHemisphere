@@ -35,10 +35,10 @@ The Clock Tempo and Swing settings can be modulated with CV via the [Metronome](
 Scroll a little further to find some additional settings. These aren't really related to the internal clock, but affect the behavior of the applet outputs. They might be moved in the future.
 * **TrigSkip** - probability of output triggers to be ignored on each channel
 * **OutSlew** - Slew amount applied to each output
-  - triggers become decay envelopes, everything else is smoothed
+  - ordinary CV is smoothed; typed gate/clock outputs bypass slew
   - also available on full-screen applet help/config screen
 
 ### Notes
 * Outgoing MIDI messages for Start, Stop, & Clock (at 24ppqn) are sent via USB automatically.
 * Incoming MIDI Start/Stop/Clock messages intuitively start the internal clock and feed it sync pulses. Pulses at TR1 are ignored while MIDI Clock is being received.
-* The internal Clock is available in **Hemispheres**/**Quadrants** as well as the **[Calibr8or](Calibr8or)** App. However, Clock settings are only stored in the active Preset in Hemispheres/Quadrants.
+* Internal clock settings are stored in the active Hemisphere preset.

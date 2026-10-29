@@ -31,13 +31,7 @@
 
 #include "../src/drivers/FreqMeasure/OC_FreqMeasure.h"
 
-#if defined(ARDUINO_TEENSY41)
-
-#define TUNER_ENABLED 1
-// TR2 on left, TR4 on right
-#define TUNER_PIN (hemisphere == 0 ? 1 : 22)
-
-#elif defined(ARDUINO_TEENSY40)
+#if   defined(ARDUINO_TEENSY40)
 #define TUNER_ENABLED (hemisphere == OC::calibration_data.flipcontrols())
 #else
 #define TUNER_ENABLED (hemisphere == 1 - OC::calibration_data.flipcontrols())
@@ -56,11 +50,7 @@ public:
     void Start() {
         A4_Hz = 440;
         if (TUNER_ENABLED) {
-#if defined(ARDUINO_TEENSY41)
-            freq_measure.begin(TUNER_PIN);
-#else
             freq_measure.begin();
-#endif
         }
         AllowRestart();
     }

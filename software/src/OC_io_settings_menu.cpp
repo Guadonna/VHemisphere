@@ -75,11 +75,7 @@ void IOSettingsMenu::Update()
 
 void IOSettingsMenu::Draw() const
 {
-#ifdef ARDUINO_TEENSY41
-  using TitleBar = menu::TitleBar<menu::kDefaultMenuStartX, 8, 2>;
-#else
   using TitleBar = menu::QuadTitleBar;
-#endif
   auto channel = selected_channel_;
 
   TitleBar::Draw(io_settings_->status_mask());

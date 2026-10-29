@@ -48,52 +48,6 @@
 
 #include "PhzConfig.h"
 
-#if defined(ARDUINO_TEENSY41)
-USBHost thisUSB;
-USBHub hub1(thisUSB);
-MIDIDevice_BigBuffer usbHostMIDI[2] {
-  MIDIDevice_BigBuffer(thisUSB),
-  MIDIDevice_BigBuffer(thisUSB)
-};
-#ifdef USB_GAMEPAD
-USBHIDParser hid1(thisUSB);
-JoystickController joystick(thisUSB);
-#endif
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial8, MIDI1);
-#include "AudioIO.h"
-#include "usb_desc.h"
-#include "Wire.h"
-#ifdef MULTIBOOT
-#include "util/cachedisable.h"
-#endif
-
-FLASHMEM __attribute__((noinline)) 
-void ScanI2C() {
-  noInterrupts();
-
-  Serial.println("...Scanning i2c addresses...");
-  uint8_t error;
-  for (uint8_t address = 1; address < 127; address++) {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-
-    if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address < 16) Serial.print("0");
-      Serial.println(address, HEX);
-    } else if (error == 4) {
-      Serial.print("Unknown error at address 0x");
-      if (address < 16) Serial.print("0");
-      Serial.println(address, HEX);
-    } //else { Serial.print("Nothing happened at address 0x"); }
-  }
-
-  interrupts();
-}
-#endif // ARDUINO_TEENSY41
 
 uint_fast8_t MENU_REDRAW = true;
 static OC::UiMode ui_mode = OC::UI_MODE_MENU;
@@ -147,99 +101,6 @@ void FASTRUN CORE_timer_ISR() {
 
 /*       ---------------------------------------------------------         */
 
-#ifdef MULTIBOOT
-extern "C" {
-  static void jump_to_alt(uint32_t choice) {
-    const uint32_t JUMP_ADDR = 0x60000000 + (choice * 0x100000);
-    uint32_t instptr = JUMP_ADDR + 0x1000 + sizeof(uint32_t);
-    uint32_t instaddr = *(uint32_t*)instptr;
-    ((void (*)(void))instaddr)();
-  }
-}
-
-// boot-time only; noinline so FLASHMEM sticks (free-function LTO rule)
-FLASHMEM __attribute__((noinline)) void BootMenu(const bool show) {
-  bool save = false;
-  int choice = -1;
-
-  while (show) {
-    const bool z_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_Z);
-    const bool a_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_A);
-    const bool b_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_B);
-    const bool x_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_X);
-    const bool y_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_Y);
-    const bool any_held = (a_held || b_held || z_held || x_held || y_held);
-
-    if (a_held) choice = 0;
-    if (b_held) choice = 1;
-    if (x_held) choice = 2;
-    if (y_held) choice = 3;
-    if (choice > -1) {
-      if (OC::calibration_data.bootchoice() != choice) {
-        OC::calibration_data.set_bootchoice(choice);
-        if (z_held) {
-          save = true;
-        }
-      }
-      if (!any_held)
-        break;
-    }
-
-    GRAPHICS_BEGIN_FRAME(true);
-    graphics.setPrintPos(1, 5);
-    graphics.print("USB Device Mode:");
-
-    graphics.setPrintPos(1, 15);
-    graphics.print("A: MIDI + Audio");
-    if (any_held && 0 == OC::calibration_data.bootchoice()) {
-      graphics.invertRect(1, 15, 127, 9);
-    }
-    graphics.setPrintPos(1, 25);
-    graphics.print("B: MIDI");
-    if (any_held && 1 == OC::calibration_data.bootchoice()) {
-      graphics.invertRect(1, 25, 127, 9);
-    }
-    graphics.setPrintPos(1, 35);
-    graphics.print("X: MTP + O_C Stock");
-    if (any_held && 2 == OC::calibration_data.bootchoice()) {
-      graphics.invertRect(1, 35, 127, 9);
-    }
-    graphics.setPrintPos(1, 45);
-    graphics.print("Y: (HW Debug)");
-    if (any_held && 3 == OC::calibration_data.bootchoice()) {
-      graphics.invertRect(1, 45, 127, 9);
-    }
-
-    graphics.setPrintPos(1, 55);
-    graphics.print("(hold Z to set)");
-    GRAPHICS_END_FRAME();
-
-    delay(10);
-  }
-
-  if (save) {
-    OC::calibration_save();
-  }
-
-  // check choice and jump
-  if (OC::calibration_data.bootchoice() == 3) {
-    for (int i = 0; i < DAC_CHANNEL_COUNT; ++i) {
-      // -3V to +4V
-      OC::DAC::set_octave(DAC_CHANNEL(i), i-3);
-    }
-    OC::ui.DebugStats();
-  } else if (OC::calibration_data.bootchoice() != MULTIBOOT) {
-    GRAPHICS_BEGIN_FRAME(true);
-    graphics.setPrintPos(1, 28);
-    graphics.print("Switching to alt mode!");
-    GRAPHICS_END_FRAME();
-    AudioNoInterrupts();
-    delay(10);
-    disableCache();
-    jump_to_alt(OC::calibration_data.bootchoice());
-  }
-}
-#endif
 
 #if defined(__IMXRT1062__)
 // fill DMAMEM with zeroes to be safe
@@ -315,9 +176,6 @@ FLASHMEM void setup() {
     delay(1500);
   }
 
-  #if defined(ARDUINO_TEENSY41)
-  OC::Pinout_Detect();
-  #endif
 #if defined(__MK20DX256__)
   NVIC_SET_PRIORITY(IRQ_PORTB, 0); // TR1 = 0 = PTB16
 #endif
@@ -328,30 +186,11 @@ FLASHMEM void setup() {
   OC::DEBUG::Init();
   OC::DigitalInputs::Init();
 
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-  if (DAC8568_Uses_SPI) {
-    // DAC8568 Vref does not turn on by default like DAC8565
-    // best to turn on Vref as early as possible for analog
-    // circuitry to settle
-    OC::DAC::DAC8568_Vref_enable();
-  }
-  if (ADC33131D_Uses_FlexIO) {
-    // ADC33131D wants calibration for Vref, takes ~1150 ms
-    OC::ADC::ADC33131D_Vref_calibrate();
-  } else {
-#endif
     delay(400);
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-  }
-#endif
 
   OC::calibration_load();
   OC::SetFlipMode(OC::calibration_data.flipcontrols());
 
-#if defined(ARDUINO_TEENSY41)
-  Wire.begin();
-  Wire.setClock(100000);
-#endif
 
   OC::ADC::Init(&OC::calibration_data.adc, OC::calibration_data.flipcontrols());
   OC::ADC::Init_DMA();
@@ -383,17 +222,6 @@ FLASHMEM void setup() {
   UI_timer.begin(UI_timer_ISR, OC_UI_TIMER_RATE);
   UI_timer.priority(OC_UI_TIMER_PRIO);
 
-#if defined(VHEMISPHERE_OUTPUT_RANGE) && defined(ARDUINO_TEENSY41)
-  if (DAC_20Vpp || NorthernLightModular || !DAC8568_Uses_SPI) {
-    while (true) {
-      GRAPHICS_BEGIN_FRAME(true);
-      graphics.setPrintPos(0, 15); graphics.print("Unsupported hardware");
-      graphics.setPrintPos(0, 30); graphics.print("Use O_C T4.1 rev3");
-      GRAPHICS_END_FRAME();
-      delay(100);
-    }
-  }
-#endif
 
   // first sign of life
   GRAPHICS_BEGIN_FRAME(true);
@@ -401,30 +229,9 @@ FLASHMEM void setup() {
   graphics.print("*Main Screen Turn On*");
   GRAPHICS_END_FRAME();
 
-#if defined(ARDUINO_TEENSY41)
-  // Standard MIDI I/O on Serial8, only for Teensy 4.1
-  if (MIDI_Uses_Serial8) {
-    Serial8.begin(31250);
-    MIDI1.begin(MIDI_CHANNEL_OMNI);
-  }
-  // USB Host support for 4.1 only
-  thisUSB.begin();
-#endif
 
-#if defined(MULTIBOOT) && (MULTIBOOT == 0)
-  delay(100);
-  BootMenu(OC::ui.read_immediate(OC::CONTROL_BUTTON_Z));
-#endif
 
   // --- more hardware init
-#if defined(ARDUINO_TEENSY41)
-  // this takes a couple seconds to timeout if no card
-  SDcard_Ready = SD.begin(BUILTIN_SDCARD);
-
-  if (I2S2_Audio_ADC && I2S2_Audio_DAC) {
-    OC::AudioIO::Init();
-  }
-#endif
 
   // initialize LittleFS for config files
   PhzConfig::Init();
@@ -600,10 +407,6 @@ void SerialHandler() {
           Serial.printf("'D' = Toggle Display Redraw [%s]\n", OC::CORE::display_update_enabled ? "ON" : "OFF");
           Serial.printf("'L' = Toggle App Loop [%s]\n", OC::CORE::app_loop_enabled ? "ON" : "OFF");
 #if defined(__IMXRT1062__)
-#if defined(ARDUINO_TEENSY41)
-          Serial.println("'N' = print Midi Log");
-          Serial.println("'i' = scan all i2c addresses");
-#endif
           Serial.println("'l' = list all files in flash (LittleFS)");
           Serial.println("'s' = list all files on SD card");
           Serial.println("'C' = clear/reset default Config file");
@@ -627,15 +430,6 @@ void SerialHandler() {
           break;
 
 #if defined(__IMXRT1062__)
-#if defined(ARDUINO_TEENSY41)
-        case 'N':
-          // MIDI monitor: dump the in/out event ring as one "N:..." line.
-          MidiLog::PrintLog();
-          break;
-        case 'i':
-          ScanI2C();
-          break;
-#endif
         case 'C':
           Serial.println("Resetting Config File!!");
           PhzConfig::clear_config();
@@ -767,9 +561,6 @@ FLASHMEM __attribute__((noinline)) void loop() {
   while (true) {
 #if defined(__IMXRT1062__)
     watchdog_feed();
-#endif
-#if defined(ARDUINO_TEENSY41)
-    thisUSB.Task();
 #endif
 
     // Refresh display

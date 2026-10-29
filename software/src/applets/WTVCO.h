@@ -357,7 +357,7 @@ private:
     uint32_t phase[2];
 
     WaveForms waveform[3];
-    std::array<int8_t, WT_SIZE> wavetable[4]; // tried heap allocation but had intermittent hanging issues with T3.2 (fine on T4.1)
+    std::array<int8_t, WT_SIZE> wavetable[4];
 
     uint8_t wt_sample = 0; // used to update gui even at low frequency
     uint8_t inc_count = 0; // count each time the phase increments to divide sample rate

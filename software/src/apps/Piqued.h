@@ -54,12 +54,6 @@ enum EnvelopeSettings : uint8_t {
   ENV_SETTING_CV2,
   ENV_SETTING_CV3,
   ENV_SETTING_CV4,
-#ifdef ARDUINO_TEENSY41
-  ENV_SETTING_CV5,
-  ENV_SETTING_CV6,
-  ENV_SETTING_CV7,
-  ENV_SETTING_CV8,
-#endif
   ENV_SETTING_ATTACK_RESET_BEHAVIOUR,
   ENV_SETTING_ATTACK_FALLING_GATE_BEHAVIOUR,
   ENV_SETTING_DECAY_RELEASE_RESET_BEHAVIOUR,
@@ -421,12 +415,6 @@ public:
     *settings++ = ENV_SETTING_CV2;
     *settings++ = ENV_SETTING_CV3;
     *settings++ = ENV_SETTING_CV4;
-#ifdef ARDUINO_TEENSY41
-    *settings++ = ENV_SETTING_CV5;
-    *settings++ = ENV_SETTING_CV6;
-    *settings++ = ENV_SETTING_CV7;
-    *settings++ = ENV_SETTING_CV8;
-#endif
     *settings++ = ENV_SETTING_ATTACK_RESET_BEHAVIOUR;
     *settings++ = ENV_SETTING_ATTACK_FALLING_GATE_BEHAVIOUR;
     *settings++ = ENV_SETTING_DECAY_RELEASE_RESET_BEHAVIOUR;
@@ -474,12 +462,6 @@ public:
     apply_cv_mapping(ENV_SETTING_CV2, cvs, s);
     apply_cv_mapping(ENV_SETTING_CV3, cvs, s);
     apply_cv_mapping(ENV_SETTING_CV4, cvs, s);
-#ifdef ARDUINO_TEENSY41
-    apply_cv_mapping(ENV_SETTING_CV5, cvs, s);
-    apply_cv_mapping(ENV_SETTING_CV6, cvs, s);
-    apply_cv_mapping(ENV_SETTING_CV7, cvs, s);
-    apply_cv_mapping(ENV_SETTING_CV8, cvs, s);
-#endif
 
     s[CV_MAPPING_SEG1] = USAT16(s[CV_MAPPING_SEG1]);
     s[CV_MAPPING_SEG2] = USAT16(s[CV_MAPPING_SEG2]);
@@ -740,12 +722,6 @@ private:
     { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_LAST, "CV2 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
     { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_LAST, "CV3 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
     { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_LAST, "CV4 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
-#ifdef ARDUINO_TEENSY41
-    { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_LAST, "CV5 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
-    { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_LAST, "CV6 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
-    { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_LAST, "CV7 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
-    { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_LAST, "CV8 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
-#endif
     { peaks::RESET_BEHAVIOUR_NULL, peaks::RESET_BEHAVIOUR_NULL, peaks::RESET_BEHAVIOUR_LAST - 1, "Attack reset", OC::Strings::reset_behaviours, settings::STORAGE_TYPE_U4 },
     { peaks::FALLING_GATE_BEHAVIOUR_IGNORE, peaks::FALLING_GATE_BEHAVIOUR_IGNORE, peaks::FALLING_GATE_BEHAVIOUR_LAST - 1, "Att fall gt", OC::Strings::falling_gate_behaviours, settings::STORAGE_TYPE_U8 },
     { peaks::RESET_BEHAVIOUR_SEGMENT_PHASE, peaks::RESET_BEHAVIOUR_NULL, peaks::RESET_BEHAVIOUR_LAST - 1, "DecRel reset", OC::Strings::reset_behaviours, settings::STORAGE_TYPE_U4 },
@@ -865,12 +841,6 @@ void AppQuadEnvelopeGenerator::Process(OC::IOFrame *ioframe) {
     cv_smooth[1].value(),
     cv_smooth[2].value(),
     cv_smooth[3].value(),
-#ifdef ARDUINO_TEENSY41
-    cv_smooth[4].value(),
-    cv_smooth[5].value(),
-    cv_smooth[6].value(),
-    cv_smooth[7].value(),
-#endif
   };
   uint32_t triggers = ioframe->digital_inputs.triggered();
 
@@ -879,12 +849,6 @@ void AppQuadEnvelopeGenerator::Process(OC::IOFrame *ioframe) {
     | envelopes_[1]->internal_trigger_mask() << 8
     | envelopes_[2]->internal_trigger_mask() << 16
     | envelopes_[3]->internal_trigger_mask() << 24
-#ifdef ARDUINO_TEENSY41
-    | envelopes_[4]->internal_trigger_mask() << 32
-    | envelopes_[5]->internal_trigger_mask() << 40
-    | envelopes_[6]->internal_trigger_mask() << 48
-    | envelopes_[7]->internal_trigger_mask() << 56
-#endif
     ;
 
   i = 0;
@@ -1258,21 +1222,10 @@ void AppQuadEnvelopeGenerator::DrawScreensaver() const {
   debug::CycleMeasurement render_cycles;
 #endif
 
-#ifdef ARDUINO_TEENSY41
-  RenderFastPreview<0, 0>(*envelopes_[0]);
-  RenderFastPreview<32, 0>(*envelopes_[1]);
-  RenderFastPreview<64, 0>(*envelopes_[2]);
-  RenderFastPreview<96, 0>(*envelopes_[3]);
-  RenderFastPreview<0, 32>(*envelopes_[4]);
-  RenderFastPreview<32, 32>(*envelopes_[5]);
-  RenderFastPreview<64, 32>(*envelopes_[6]);
-  RenderFastPreview<96, 32>(*envelopes_[7]);
-#else
   RenderFastPreview<0, 0>(*envelopes_[0]);
   RenderFastPreview<64, 0>(*envelopes_[1]);
   RenderFastPreview<0, 32>(*envelopes_[2]);
   RenderFastPreview<64, 32>(*envelopes_[3]);
-#endif
 
   OC::scope_render();
 

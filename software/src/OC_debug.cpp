@@ -16,12 +16,6 @@
 #include "src/extern/dspinst.h"
 #include <malloc.h>
 
-#ifdef ARDUINO_TEENSY41
-#include <Audio.h>
-
-extern "C" uint8_t external_psram_size;
-extern "C" char _extram_start[], _extram_end[];
-#endif
 extern "C" char _ebss[], _heap_end[], *__brkval, _estack;
 
 extern USBHost thisUSB;
@@ -95,15 +89,6 @@ static void debug_menu_ram() {
   graphics.setPrintPos(2, 22);
   graphics.printf("HEAP  %7d (%dKB)", heap, heap >> 10);
 
-#if ARDUINO_TEENSY41
-  char *derp = (char*)extmem_malloc(1);
-  //auto psram = _extram_start + (external_psram_size << 20) - _extram_end;
-  auto psram = _extram_start + (external_psram_size << 20) - derp;
-  if (external_psram_size == 0) psram = 0;
-  graphics.setPrintPos(2, 32);
-  graphics.printf("PSRAM %7d (%dKB)", psram, psram >> 10);
-  extmem_free(derp);
-#endif
 }
 
 FLASHMEM
@@ -148,11 +133,7 @@ static void debug_menu_version()
   static int hwid = int(GetIDVoltage() * 1000);
 
   graphics.setPrintPos(2, 12);
-#if defined(ARDUINO_TEENSY41)
-  graphics.print(Strings::NAMES_VENDOR[GetIDIndex()]);
-#else
   graphics.print(Strings::NAME);
-#endif
   graphics.setPrintPos(2, 22);
   graphics.print(Strings::VERSION);
   graphics.setPrintPos(2, 32);
@@ -202,19 +183,6 @@ static void debug_menu_gfx() {
 
 FLASHMEM
 static void debug_menu_adc() {
-#ifdef ARDUINO_TEENSY41
-  graphics.setPrintPos(2, 12);
-  graphics.printf("C1 %5lu C5 %5lu", ADC::raw_value(ADC_CHANNEL_1), ADC::raw_value(ADC_CHANNEL_5));
-
-  graphics.setPrintPos(2, 22);
-  graphics.printf("C2 %5lu C6 %5lu", ADC::raw_value(ADC_CHANNEL_2), ADC::raw_value(ADC_CHANNEL_6));
-
-  graphics.setPrintPos(2, 32);
-  graphics.printf("C3 %5lu C7 %5lu", ADC::raw_value(ADC_CHANNEL_3), ADC::raw_value(ADC_CHANNEL_7));
-
-  graphics.setPrintPos(2, 42);
-  graphics.printf("C4 %5lu C8 %5lu", ADC::raw_value(ADC_CHANNEL_4), ADC::raw_value(ADC_CHANNEL_8));
-#else
   graphics.setPrintPos(2, 12);
   graphics.printf("C1 %5ld %5lu", ADC::value<ADC_CHANNEL_1>(), ADC::raw_value(ADC_CHANNEL_1));
 
@@ -226,7 +194,6 @@ static void debug_menu_adc() {
 
   graphics.setPrintPos(2, 42);
   graphics.printf("C4 %5ld %5lu", ADC::value<ADC_CHANNEL_4>(), ADC::raw_value(ADC_CHANNEL_4));
-#endif
   const uint8_t trigz[] = {
     DigitalInputs::read_immediate<DIGITAL_INPUT_1>(),
     DigitalInputs::read_immediate<DIGITAL_INPUT_2>(),
@@ -237,102 +204,6 @@ static void debug_menu_adc() {
   graphics.printf("T1=%u T2=%u T3=%u T4=%u", trigz[0], trigz[1], trigz[2], trigz[3]);
 }
 
-#ifdef ARDUINO_TEENSY41
-FLASHMEM
-static void debug_menu_adc_noise() {
-  static debug::AveragedCycles chan[ADC_CHANNEL_COUNT];
-  static elapsedMillis timeout;
-
-  const bool reset = timeout > 5000;
-  if (reset) timeout = 0;
-
-  for (int i = 0; i < 4; ++i) {
-    if (reset) {
-      chan[i].Reset();
-      chan[i+4].Reset();
-    }
-    chan[i].push(ADC::raw_value(ADC_CHANNEL(i)));
-    chan[i+4].push(ADC::raw_value(ADC_CHANNEL(i+4)));
-
-    uint32_t diff1 = chan[i].max_value() - chan[i].min_value();
-    uint32_t diff2 = chan[i+4].max_value() - chan[i+4].min_value();
-
-    graphics.setPrintPos(2, 12 + 10*i);
-    graphics.printf("C%d %5lu C%d %5lu", i+1, diff1, i+5, diff2);
-  }
-
-  graphics.setPrintPos(2, 52);
-  graphics.print("(5 sec reset)");
-}
-
-FLASHMEM
-static void debug_menu_adc_value() {
-  graphics.setPrintPos(2, 12);
-  graphics.printf("C1 %5ld C5 %5ld", ADC::value(ADC_CHANNEL_1), ADC::value(ADC_CHANNEL_5));
-
-  graphics.setPrintPos(2, 22);
-  graphics.printf("C2 %5ld C6 %5ld", ADC::value(ADC_CHANNEL_2), ADC::value(ADC_CHANNEL_6));
-
-  graphics.setPrintPos(2, 32);
-  graphics.printf("C3 %5ld C7 %5ld", ADC::value(ADC_CHANNEL_3), ADC::value(ADC_CHANNEL_7));
-
-  graphics.setPrintPos(2, 42);
-  graphics.printf("C4 %5ld C8 %5ld", ADC::value(ADC_CHANNEL_4), ADC::value(ADC_CHANNEL_8));
-
-  const uint8_t trigz[] = {
-    DigitalInputs::read_immediate<DIGITAL_INPUT_1>(),
-    DigitalInputs::read_immediate<DIGITAL_INPUT_2>(),
-    DigitalInputs::read_immediate<DIGITAL_INPUT_3>(),
-    DigitalInputs::read_immediate<DIGITAL_INPUT_4>()
-  };
-  graphics.setPrintPos(2, 52);
-  graphics.printf("T1=%u T2=%u T3=%u T4=%u", trigz[0], trigz[1], trigz[2], trigz[3]);
-}
-
-static size_t midi_rx_counter[3] = {0};
-
-FLASHMEM
-static void debug_menu_midi() {
-  graphics.setPrintPos(2, 12);
-  graphics.printf("Serial Rx: %u", midi_rx_counter[0]);
-  graphics.setPrintPos(2, 22);
-  graphics.printf("USB Dev Rx: %u", midi_rx_counter[1]);
-  graphics.setPrintPos(2, 32);
-  graphics.printf("USB Host Rx: %u", midi_rx_counter[2]);
-}
-
-FLASHMEM
-static void debug_menu_audio() {
-  static SmoothedValue<int, 64> smooth_cpu;
-  smooth_cpu.push(AudioProcessorUsage() * 100);
-
-  weegfx::coord_t y = 12;
-  graphics.setPrintPos(2, y);
-  graphics.printf("Total CPU %2d.%02d%%", smooth_cpu.value()/100, smooth_cpu.value()%100);
-
-  y += 10;
-  float whole = AudioProcessorUsageMax();
-  int part = int(whole * 100) % 100;
-  graphics.setPrintPos(2, y);
-  graphics.printf("Max CPU %2d.%02d%%", int(whole), part);
-
-  y += 10;
-  graphics.setPrintPos(2, y);
-  graphics.printf("Rate: %lu Hz", uint32_t(AUDIO_SAMPLE_RATE));
-
-  y += 10;
-  graphics.setPrintPos(2, y);
-  graphics.printf("PSRAM: %2u MB", external_psram_size);
-
-  y += 10;
-  graphics.setPrintPos(2, y);
-  if (SDcard_Ready) {
-    graphics.printf("SDcard: ");
-    graphics.drawBitmap8(50, y, 8, CHECK_ICON);
-  } else
-    graphics.print("(no SD card)");
-}
-#endif
 
 #ifdef PEWPEWPEW
 FLASHMEM
@@ -364,13 +235,7 @@ static void debug_menu_app() {
     graphics.print(app->name());
     app->DrawDebugInfo();
   } else {
-#ifdef ARDUINO_TEENSY41
-    // midi monitor from Boot Menu
-    graphics.print("MIDI");
-    debug_menu_midi();
-#else
     graphics.print("?");
-#endif
   }
 }
 
@@ -391,11 +256,6 @@ static const DebugMenu debug_menus[] = {
   { "ADC", debug_menu_adc },
 #ifdef OC_DEBUG_ADC_STATS
   { "ADC min/max", debug_menu_adc2 },
-#endif
-#ifdef ARDUINO_TEENSY41
-  { "ADC (value)", debug_menu_adc_value },
-  { "ADC (noise)", debug_menu_adc_noise },
-  { "AUDIO", debug_menu_audio },
 #endif
 #ifdef POLYLFO_DEBUG  
   { "POLYLFO", POLYLFO_debug },
@@ -425,17 +285,6 @@ static const DebugMenu debug_menus[] = {
 };
 
 void midi_monitor() {
-#ifdef ARDUINO_TEENSY41
-  while (MIDI1.read()) {
-    ++midi_rx_counter[0];
-  }
-  while (usbMIDI.read()) {
-    ++midi_rx_counter[1];
-  }
-  while (usbHostMIDI[0].read()) {
-    ++midi_rx_counter[2];
-  }
-#endif
 }
 
 void Ui::DebugStats() {

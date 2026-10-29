@@ -34,17 +34,11 @@ void Ui::Init() {
 
 #if defined(VOR)
   static const int button_pins[] = { but_top, but_bot, butL, butR, but_mid };
-#elif defined(ARDUINO_TEENSY41)
-  static const int button_pins[] = { but_top, but_bot, butL, butR, but_mid, but_top2, but_bot2 };
 #else
   static const int button_pins[] = { but_top, but_bot, butL, butR };
 #endif
 
-#if defined(ARDUINO_TEENSY41)
-  const size_t count = (but_mid == 0xFF)? 4 : CONTROL_BUTTON_LAST;
-#else
   const size_t count = CONTROL_BUTTON_LAST;
-#endif
   for (size_t i = 0; i < count; ++i) {
     buttons_[i].Init(button_pins[i], OC_GPIO_BUTTON_PINMODE);
   }
@@ -96,11 +90,7 @@ void FASTRUN Ui::Poll() {
   uint32_t now = ++ticks_;
   uint16_t button_state = 0; // immediate readings
 
-#if defined(ARDUINO_TEENSY41)
-  const size_t count = (but_mid == 0xFF)? 4 : CONTROL_BUTTON_LAST;
-#else
   const size_t count = CONTROL_BUTTON_LAST;
-#endif
   for (size_t i = 0; i < count; ++i) {
     if (buttons_[i].Poll())
       button_state |= control_mask(i);
@@ -248,11 +238,7 @@ UiMode Ui::Splashscreen(bool &reset_settings, uint8_t phase) {
       GRAPHICS_BEGIN_FRAME(true);
 
       menu::DefaultTitleBar::Draw();
-#if defined(ARDUINO_TEENSY41)
-      graphics.print(Strings::NAMES_VENDOR[GetIDIndex()]);
-#else
       graphics.print(Strings::NAME);
-#endif
       weegfx::coord_t y = menu::CalcLineY(0);
 
       graphics.setPrintPos(menu::kIndentDx, y + menu::kTextDy);

@@ -22,17 +22,6 @@ namespace OC {
 
 #if defined(VOR)
   const char * const NAME = "Plum Audio O_C+";
-#elif defined(ARDUINO_TEENSY41)
-  const char * const NAME = "O.R.N.8";
-  const char * const NAMES_VENDOR[7] = { 
-    "invalid HW_ID",
-    "O_C by mxmxmx",
-    "O_C T4.1 Rev3",
-    "O.R.N.8", // pioneered by ALA Ornate Criminal
-    "Calsynth XLOC2",
-    "NLM Xenomorpher",
-    "NLM Xenomorpher",
-  };
 #elif defined(NORTHERNLIGHT)
   const char * const NAME = "NLM cOC/hOC/2OC";
 #elif defined(__IMXRT1062__)
@@ -69,13 +58,7 @@ namespace OC {
 
   const char * const trigger_input_names_none[] = { " - ", "TR1", "TR2", "TR3", "TR4",
     "CV1", "CV2", "CV3", "CV4",
-#ifdef ARDUINO_TEENSY41
-    "CV5", "CV6", "CV7", "CV8",
-#endif
     "A", "B", "C", "D",
-#ifdef ARDUINO_TEENSY41
-    "E", "F", "G", "H",
-#endif
   };
 
   const char * const cv_input_names_none[] = {

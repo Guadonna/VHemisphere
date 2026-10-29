@@ -25,8 +25,9 @@ int main() {
     assert(output_pitch(p) == -output_pitch(-p));
     assert(millivolts(p) >= -1000 && millivolts(p) <= 1000);
   }
-  // Traverse the exact wizard state helper used on-device: 8 channels x 3 points.
-  for (int channels : {4, 8}) {
+  // Traverse the exact wizard state helper used on-device: 4 channels x 3 points.
+  {
+    constexpr int channels = 4;
     const int last = 2*channels + 1;
     CalibrationCursor cursor{1, 0};
     for (int ch = 0; ch < channels; ++ch) {
@@ -74,5 +75,5 @@ int main() {
   quantizer.Init(); quantizer.Configure(chromatic);
   assert(quantizer.Process(128) == 128);
   assert(calibrated(128, lo, zero, hi) == 30108);
-  puts("PASS: calibration endpoints, asymmetry, inverted tables, clipping, precision, monotonicity, real quantizer integration, gate/clock transitions, 12/24 calibration steps forward/backward");
+  puts("PASS: calibration endpoints, asymmetry, inverted tables, clipping, precision, monotonicity, real quantizer integration, gate/clock transitions, 12 calibration steps forward/backward");
 }

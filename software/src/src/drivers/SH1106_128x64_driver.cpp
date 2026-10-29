@@ -46,7 +46,7 @@ static bool page_dma_active = false;
 #define SPI_SR_RXCTR 0XF0
 #endif
 
-// Teensy 4.1 has large SPI FIFO, so FIFO and interrupt is used rather than DMA
+// Teensy 4.0 uses the SPI FIFO and interrupts for display transfers.
 #elif defined(__IMXRT1062__)
 static void spi_sendpage_isr();
 static volatile int sendpage_state; // 0: inactive, 1..4: active
@@ -147,17 +147,6 @@ void SH1106_128x64_Driver::Init() {
 #endif // DMA_PAGE_TRANSFER
 
 #elif defined(__IMXRT1062__)
-  #if defined(ARDUINO_TEENSY41)
-    if (OLED_Uses_SPI1) {
-      LPSPI3_IER = 0;
-      LPSPI3_SR = 0x3F00; // clear any prior pending interrupt flags
-      LPSPI3_FCR = LPSPI_FCR_RXWATER(0) | LPSPI_FCR_TXWATER(3);
-      attachInterruptVector(IRQ_LPSPI3, spi_sendpage_isr);
-      NVIC_CLEAR_PENDING(IRQ_LPSPI3);
-      NVIC_SET_PRIORITY(IRQ_LPSPI3, 48);
-      NVIC_ENABLE_IRQ(IRQ_LPSPI3);
-    } else {
-  #endif
       // assumes DAC driver already called SPI.begin()
       LPSPI4_IER = 0;
       LPSPI4_SR = 0x3F00; // clear any prior pending interrupt flags
@@ -166,9 +155,6 @@ void SH1106_128x64_Driver::Init() {
       NVIC_CLEAR_PENDING(IRQ_LPSPI4);
       NVIC_SET_PRIORITY(IRQ_LPSPI4, 48);
       NVIC_ENABLE_IRQ(IRQ_LPSPI4);
-  #if defined(ARDUINO_TEENSY41)
-    }
-  #endif
 #endif // __IMXRT1062__
 
   Clear();
@@ -267,28 +253,15 @@ bool SH1106_128x64_Driver::SendPage(uint_fast8_t index, const uint8_t *data) {
   sendpage_state = 1;
   sendpage_src = (const uint32_t *)data; // frame buffer is 32 bit aligned
   sendpage_count = kPageSize >> 2; // number of 32 bit words to write into FIFO
-  #if defined(ARDUINO_TEENSY41)
-  if (OLED_Uses_SPI1) {
-    // DAC does not use SPI1, so we must forcibly trigger first interrupt
-    NVIC_TRIGGER_IRQ(IRQ_LPSPI3);
-  } else {
-  #endif
     // don't clear SPI status flags, already cleared before DAC data was loaded into FIFO
     LPSPI4_IER = LPSPI_IER_TCIE; // run spi_sendpage_isr() when DAC data complete
-  #if defined(ARDUINO_TEENSY41)
-  }
-  #endif
 
   return true;
 }
 
 static void spi_sendpage_isr() {
   DEBUG_PIN_SCOPE(OC_GPIO_DEBUG_PIN2);
-  #if defined(ARDUINO_TEENSY41)
-  IMXRT_LPSPI_t *lpspi = (OLED_Uses_SPI1) ? &IMXRT_LPSPI3_S : &IMXRT_LPSPI4_S;
-  #else
   IMXRT_LPSPI_t *lpspi = &IMXRT_LPSPI4_S;
-  #endif
   uint32_t status = lpspi->SR;
   lpspi->SR = status; // clear interrupt status flags
   if (sendpage_state == 1) {
@@ -392,16 +365,6 @@ void SH1106_128x64_Driver::SPI_send(void *bufr, size_t n) {
 
 #elif defined(__IMXRT1062__)
 void SH1106_128x64_Driver::SPI_send(void *bufr, size_t n) {
-  #if defined(ARDUINO_TEENSY41)
-    if (OLED_Uses_SPI1) {
-      SPI1.beginTransaction(
-        SPISettings(Large_OLED? 8000000 : 24000000, MSBFIRST, SPI_MODE0)
-      );
-      SPI1.transfer(bufr, NULL, n);
-      SPI1.endTransaction();
-      return;
-    }
-  #endif
   SPI.beginTransaction(SPISettings(24000000, MSBFIRST, SPI_MODE0));
   LPSPI4_TCR |= LPSPI_TCR_PCS(3); // do not interfere with DAC's CS pin
   SPI.transfer(bufr, NULL, n);

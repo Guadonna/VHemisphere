@@ -1,10 +1,11 @@
-# Development status: v0.2.0
+# Development status: v0.2.1
 
 See README.md for the implemented behavior and verification limits.
 The release is software-validated, not hardware-validated.
 
 Changes from the upstream commit:
-- Single standalone Teensy 4.0 target; no multiboot jumps.
+- Single standalone Teensy 4.0 target, original Phazerville T40 pinout,
+  300 MHz CPU clock and standard Teensy 4.0 linker script.
 - Four CV outputs: /5 transfer, calibrated interpolation, ±1 V clamp.
 - Explicit gate/clock state with fixed 0/1 V endpoints.
 - Three-point output calibration (-1, 0, +1 V), selected channel only.
@@ -17,7 +18,3 @@ Upstream source is retained for attribution and shared dependencies; optional
 full-screen apps are not instantiated in this target. Hardware-specific warnings
 from upstream (including USB descriptor LTO declaration mismatch) remain; the
 release build passes without disabling diagnostics or TLS verification.
-
-Target correction: v0.2.0 uses the original Phazerville T40 pinout, 300 MHz clock,
-standard Teensy 4.0 linker script and two-applet Hemisphere. The T4.1-only
-output channels, calibration endpoints and audio dependencies are excluded.

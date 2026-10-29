@@ -52,10 +52,6 @@ namespace HS {
   enum HEM_SIDE : uint8_t {
     LEFT_HEMISPHERE = 0,
     RIGHT_HEMISPHERE = 1,
-#ifdef ARDUINO_TEENSY41
-    LEFT2_HEMISPHERE = 2,
-    RIGHT2_HEMISPHERE = 3,
-#endif
     CLOCK_CURSOR,
     GLOBAL_CURSOR_EXTRA,
     AUDIO_SLOT_L,
@@ -223,7 +219,7 @@ namespace HS {
   extern util::SemitoneQuantizer input_quant[ADC_CHANNEL_COUNT];
   extern QuantEngine q_engine[QUANT_CHANNEL_COUNT];
 
-#if defined(ARDUINO_TEENSY41) || defined(VOR)
+#if defined(VOR)
   extern int octave_max;
 #elif defined(NORTHERNLIGHT)
   static constexpr int octave_max = 10;

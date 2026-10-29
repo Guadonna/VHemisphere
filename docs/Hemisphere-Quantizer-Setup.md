@@ -14,4 +14,4 @@ There are 8 global quantizer engines, each with a **Scale**, **Root Note**, **Oc
 ### Teensy 3.2 Limitations
 On original O_C hardware, settings for the first 4 quantizers can be only saved with [Calibr8or](Calibr8or). Some applets may also save/restore quantizer settings, but this may change.
 
-On T4.0 or T4.1, all settings are stored when you save a [Preset](Hemisphere-Presets).
+On Teensy 4.0, all settings are stored when you save a [Preset](Hemisphere-Presets).

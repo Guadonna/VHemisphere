@@ -200,17 +200,10 @@ void FASTRUN AppLorenzGenerator::Process(OC::IOFrame *ioframe) {
   bool reset_both_phase = ioframe->digital_inputs.triggered(OC::DIGITAL_INPUT_3);
   bool freeze = ioframe->digital_inputs.raised(OC::DIGITAL_INPUT_4);
 
-#ifdef ARDUINO_TEENSY41
-  cv_freq1.push(ioframe->cv.values[ADC_CHANNEL_5]);
-  cv_rho1.push(ioframe->cv.values[ADC_CHANNEL_6]);
-  cv_freq2.push(ioframe->cv.values[ADC_CHANNEL_7]);
-  cv_rho2.push(ioframe->cv.values[ADC_CHANNEL_8]);
-#else
   cv_freq1.push(ioframe->cv.values[ADC_CHANNEL_1]);
   cv_rho1.push(ioframe->cv.values[ADC_CHANNEL_2]);
   cv_freq2.push(ioframe->cv.values[ADC_CHANNEL_3]);
   cv_rho2.push(ioframe->cv.values[ADC_CHANNEL_4]);
-#endif
 
   // Range in settings is (0-256] so this gets scaled to (0,65535]
   // CV value is 12 bit so also needs scaling

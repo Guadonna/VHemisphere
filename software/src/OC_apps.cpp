@@ -60,9 +60,6 @@
 #ifndef NO_HEMISPHERE
 // applets
 #include "applets/_config.h"
-#ifdef ARDUINO_TEENSY41
-#include "audio_applets/_config.h"
-#endif
 #endif
 
 #include "HSApplication.h"
@@ -70,11 +67,7 @@
 #include "OC_visualfx.h"
 
 // --- Internal Clock ---
-#ifdef ARDUINO_TEENSY41
-#include "applets/ClockSetupT4.h"
-#else
 #include "applets/ClockSetup.h"
-#endif
 ClockSetup ClockSetup_instance;
 void HS::ProcessClock() {
   ClockSetup_instance.Controller();

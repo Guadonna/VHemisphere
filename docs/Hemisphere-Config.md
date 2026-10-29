@@ -7,7 +7,7 @@ has_toc: false
 ---
 # Config
 
-From within Hemispheres (or Quadrants), long-press DOWN (or B) button to enter the Configuration menu. Short-press UP or DOWN (or A/B/X/Y) buttons to exit.
+From within Hemispheres, long-press DOWN button to enter the Configuration menu. Short-press UP or DOWN buttons to exit.
 
 Rotate LEFT encoder to jump to different pages. Use RIGHT encoder to move the cursor and push to edit.
 

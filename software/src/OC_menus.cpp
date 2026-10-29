@@ -99,11 +99,7 @@ void screensaver() {
   }
 }
 
-#ifdef ARDUINO_TEENSY41
-static const size_t kScopeDepth = 32;
-#else
 static const size_t kScopeDepth = 64;
-#endif
 
 uint16_t scope_history[DAC::kHistoryDepth];
 uint16_t averaged_scope_history[DAC_CHANNEL_COUNT][kScopeDepth];
@@ -136,16 +132,6 @@ void scope_render() {
 
   for (weegfx::coord_t x = 0; x < (weegfx::coord_t)kScopeDepth - 1; ++x) {
     size_t index = (x + averaged_scope_tail + 1) % kScopeDepth;
-#ifdef ARDUINO_TEENSY41
-      graphics.setPixel( 0 + x,  0 + averaged_scope_history[0][index]);
-      graphics.setPixel(32 + x,  0 + averaged_scope_history[1][index]);
-      graphics.setPixel(64 + x,  0 + averaged_scope_history[2][index]);
-      graphics.setPixel(96 + x,  0 + averaged_scope_history[3][index]);
-      graphics.setPixel( 0 + x, 32 + averaged_scope_history[4][index]);
-      graphics.setPixel(32 + x, 32 + averaged_scope_history[5][index]);
-      graphics.setPixel(64 + x, 32 + averaged_scope_history[6][index]);
-      graphics.setPixel(96 + x, 32 + averaged_scope_history[7][index]);
-#else
     if (NorthernLightModular) {
       graphics.setPixel(x, 0 + averaged_scope_history[2][index]);
       graphics.setPixel(64 + x, 0 + averaged_scope_history[3][index]);
@@ -157,7 +143,6 @@ void scope_render() {
       graphics.setPixel(x, 32 + averaged_scope_history[1][index]);
       graphics.setPixel(64 + x, 32 + averaged_scope_history[3][index]);
     }
-#endif
   }
 }
 

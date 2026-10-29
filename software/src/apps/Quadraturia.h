@@ -236,11 +236,7 @@ public:
     { 0, 0, 127, "B AM by A", NULL, settings::STORAGE_TYPE_U8 },
     { 0, 0, 127, "C AM by B", NULL, settings::STORAGE_TYPE_U8 },
     { 0, 0, 127, "D AM by C", NULL, settings::STORAGE_TYPE_U8 }, 
-#ifdef ARDUINO_TEENSY41
-    { 0, 0, 6, "CV8: DEST", cv4_destinations, settings::STORAGE_TYPE_U8 },
-#else
     { 0, 0, 6, "CV4: DEST", cv4_destinations, settings::STORAGE_TYPE_U8 },
-#endif
     { 3, 0, 5, "TR4: MULT", tr4_multipliers, settings::STORAGE_TYPE_U4 }, 
 #ifdef VOR
     { 0, 0, 2, "VBias", OC::Strings::VOR_offsets, settings::STORAGE_TYPE_U4 }, 
@@ -278,17 +274,10 @@ void FASTRUN AppPolyLfo::Process(OC::IOFrame *ioframe) {
   bool tempo_sync = ioframe->digital_inputs.triggered<OC::DIGITAL_INPUT_3>();
 
   // TODO[PLD] Do we need the excessive smoothing?
-#ifdef ARDUINO_TEENSY41
-  poly_lfo_.cv_freq.push(ioframe->cv.values[ADC_CHANNEL_5]);
-  poly_lfo_.cv_shape.push(ioframe->cv.values[ADC_CHANNEL_6]);
-  poly_lfo_.cv_spread.push(ioframe->cv.values[ADC_CHANNEL_7]);
-  poly_lfo_.cv_mappable.push(ioframe->cv.values[ADC_CHANNEL_8]);
-#else
   poly_lfo_.cv_freq.push(ioframe->cv.values[ADC_CHANNEL_1]);
   poly_lfo_.cv_shape.push(ioframe->cv.values[ADC_CHANNEL_2]);
   poly_lfo_.cv_spread.push(ioframe->cv.values[ADC_CHANNEL_3]);
   poly_lfo_.cv_mappable.push(ioframe->cv.values[ADC_CHANNEL_4]);
-#endif
 
   // Range in settings is (0-256] so this gets scaled to (0,65535]
   // CV value is 12 bit so also needs scaling

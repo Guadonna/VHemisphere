@@ -111,11 +111,7 @@ public:
     return read_immediate(input);
   }
   static inline bool read_immediate(DigitalInput input) {
-#ifdef ARDUINO_TEENSY41
-    auto activated = (ADC33131D_Uses_FlexIO ? HIGH : LOW);
-#else
     auto activated = LOW;
-#endif
     switch (input) {
       case DIGITAL_INPUT_1: return (digitalReadFast(TR1) == activated);
       case DIGITAL_INPUT_2: return (digitalReadFast(TR2) == activated);

@@ -55,9 +55,6 @@ void InputDesc::set_printf(const char *fmt, ...)
 {
   const ADC_CHANNEL chan[ADC_CHANNEL_COUNT] = {
     ADC_CHANNEL_1, ADC_CHANNEL_2, ADC_CHANNEL_3, ADC_CHANNEL_4,
-#ifdef ARDUINO_TEENSY41
-    ADC_CHANNEL_5, ADC_CHANNEL_6, ADC_CHANNEL_7, ADC_CHANNEL_8,
-#endif
   };
 
   {
@@ -92,9 +89,6 @@ void InputDesc::set_printf(const char *fmt, ...)
 {
   const DAC_CHANNEL chan[DAC_CHANNEL_COUNT] = {
     DAC_CHANNEL_A, DAC_CHANNEL_B, DAC_CHANNEL_C, DAC_CHANNEL_D,
-#ifdef ARDUINO_TEENSY41
-    DAC_CHANNEL_E, DAC_CHANNEL_F, DAC_CHANNEL_G, DAC_CHANNEL_H,
-#endif
   };
 
   for (int i = 0; i < DAC_CHANNEL_COUNT; ++i) {

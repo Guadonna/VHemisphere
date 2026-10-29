@@ -270,17 +270,10 @@ void AppQuadBouncingBalls::Init() {
 
 void FASTRUN AppQuadBouncingBalls::Process(OC::IOFrame *ioframe) {
 // TODO[PLD] Do we need this excessive smoothing?
-#ifdef ARDUINO_TEENSY41
-  cv1.push(ioframe->cv.values[4]);
-  cv2.push(ioframe->cv.values[5]);
-  cv3.push(ioframe->cv.values[6]);
-  cv4.push(ioframe->cv.values[7]);
-#else
   cv1.push(ioframe->cv.values[0]);
   cv2.push(ioframe->cv.values[1]);
   cv3.push(ioframe->cv.values[2]);
   cv4.push(ioframe->cv.values[3]);
-#endif
 
   const int32_t cvs[BBGEN_CHANNEL_COUNT] = { cv1.value(), cv2.value(), cv3.value(), cv4.value() };
   uint32_t triggers = ioframe->digital_inputs.triggered();

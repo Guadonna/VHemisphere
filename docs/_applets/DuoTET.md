@@ -64,10 +64,6 @@ Note: All parameters with "()" may be additionally mapped to any of the CV input
 
 See https://en.xen.wiki/ for details on intervals for any given TET setting
 
-### T3.2 Disclaimer
-
-This applet was developed on T4.1 hardware, and may exceed CPU and I/O limitations of Teensy 3.2 hardware.
-
 ## Credits
 
 Authored by Eris Fairbanks.

@@ -5,49 +5,15 @@ nav_order: 7
 
 # App and Applet Index
 
-Jump to the lists of [Full Screen Apps](App-and-Applet-Index#full-screen-apps) or [Hemisphere Applets](App-and-Applet-Index#cv-applets), also organized [by function](App-and-Applet-Index#apps-and-applets-by-function)
-
-## Full Screen Apps
-Full screen apps in Phazerville are mostly from the original Ornament and Crime firmware, with a few notable additions ([Calibr8or](Calibr8or), [Scenery](Scenery), and [Passencore](Passencore)). Each of the full screen apps takes advantage of all inputs and outputs in their own way, which is usually configurable.
-
-Not everything can fit at once on Teensy 3.2 hardware, but you can use the [default set](https://github.com/djphazer/O_C-Phazerville/releases) or [choose your own selection](https://github.com/djphazer/O_C-Phazerville/discussions/38) with a custom build.
-
- * [Acid Curds](Acid-Curds) - Quad 8-step chord progression sequencer
- * [Automatonnetz](Automatonnetz) - Neo-Riemannian transformations on a 5x5 matrix sequence!
- * [Calibr8or](Calibr8or) - Quad performance quantizer with pitch tracking calibration
- * [Captain MIDI](Captain-MIDI) - Configurable CV-to-MIDI and MIDI-to-CV interface
- * [CopierMaschine](CopierMaschine) - Quantizing Analogue Shift Register
- * [The Darkest Timeline](The-Darkest-Timeline) - Parallel universe sequencer
- * [Dialectic Ping Pong](Dialectic-Ping-Pong)
- * [Enigma](Enigma) – Sequencer of shift registers (Turing Machines)
- * [Harrington 1200](Harrington-1200) - Neo-Riemannian transformations for triad chord progressions
- * Hemisphere - 2 [Applets](#cv-applets) at a time
- * [Low-rents](Low-rents) - Lorenz attractor
- * [Meta-Q](Meta-Q) - Dual sequenced quantizer
- * [Neural Net](Neural-Net) - 6 Neuron logic processor
- * [Quadraturia](Quadraturia) - Quadrature wavetable LFO
- * [Quantermain](Quantermain) - Quad quantizer
- * [References](References) - Tuning utility
- * [Scenery](Scenery) - Macro CV switch / crossfader
- * [Passencore](Passencore) - Generate a chord progression from LFOs (from sixolet)
- * [Piqued](Piqued) - Quad envelope generator
- * [Pong](Pong) - It's Pong!
- * [Scale Editor](Scale-Editor) - Edit and save microtonal scales
- * [Sequins](Sequins) - Basic dual-channel sequancer
- * [Waveform Editor](Waveform-Editor) - Edit and save vector waveforms (for [LFOs](VectorLFO), [envelopes](VectorEG), [one-shots](VectorMod), and [phase scrubbing](VectorMorph))
- * [Viznutcracker, sweet!](Viznutcracker-sweet) - Quad Bytebeat generator
- * [Backup / Restore](Backup-and-Restore) - Transfer app and calibration data as SysEx
- * [Setup / About](Setup-About) - Check your version, change encoder directions, adjust display/DAC/ADC, screen off time
-
-
-***
+Hemisphere runs two CV applets. This build also includes Setup/About, Scale
+Editor, Waveform Editor, and Backup/Restore as utilities. Applet descriptions
+below refer to internal signal values; see the project README for output scaling.
 
 ## CV Applets
 Hemisphere splits the screen into two halves: each side available to load any one of a long list of applets. On o_C hardware with inputs and outputs arranged in 3 rows of 4 columns (i.e. most 8hp units), the I/O corresponding to an applet should be in line with that half of the display (i.e. paired into 1+2/A+B and 3+4/C+D).
 
 If you're coming from any of the other Hemisphere forks, note that many of the applets have been upgraded for additional flexibility and functionality, and several are brand new.
 
-Newer ORN8 hardware (T41) hosts the same set of Applets, four at a time, inside the [Quadrants](Quadrants) front-end.
 
 * [ADSR](ADSR-EG) - Dual attack / decay / sustain / release envelope
 * [AD EG](AD-EG) - Attack / decay envelope
@@ -135,63 +101,3 @@ Newer ORN8 hardware (T41) hosts the same set of Applets, four at a time, inside 
 * [Voltage](Voltage) - static output CV
 * [WTVCO](WTVCO) - WaveTable Voltage Controlled Oscillator
 * [Xfader](Xfader) - basic CV mixer, with gate-controllable fader (formerly Mixer:Bal)
-
-## Audio Applets
-
-Within [Quadrants](Quadrants) on ORN8 hardware, there are sound generators and effects, using the power of Teensy 4.1 for DSP in 16-bit 48kHz quality. Although the hardware codec is limited to 16-bit, the firmware library can be upgraded to 32-bit float in the future.
-
-* Crosspan
-* Delay - uses PSRAM for longer buffers
-* Dynamics - gate -> compressor -> gain -> limiter
-  - plus 3-Bandz - multiband version of the same
-* FMDrum - small noisy percussion
-* Fold/MMF - wavefolder + multi-mode filter
-* Glitch - stutter effects
-* Grit - saturation & distortion
-* HandSaw - inspired by Acid Rain Chainsaw/Ripsaw
-* HarmOsc - additive synthesis
-* Input - analog, or USB if enabled
-* KrpsStrng
-* Mid/Side
-* Misty - granular effect
-* ModalResonator
-* Osc - standard shapes, with FM and PM
-* TuneTracker - monophonic pitch detection, pitch-to-CV
-* Upsampled (from CV)
-* VCA - high-quality, with variable curve
-* WavPlay - tempo-synced sample player
-* WavRec - record to SD card
-
-***
-
-## Apps and Applets by Function
-
-_(note: T41 Audio Applets are not included here)_
-
-| Function                 | CV Applets         | Full Screen Apps      |
-| ------------------------ | ------------------------   | --------------------- |
-|**Accent Sequencer**       | [Palimpsest](Palimpsest)                                                                                                                                                        |                                                                                          |
-| **Analog Logic**            | [Calculate](Calculate)                                                                                                                                                         |                                                                                          |
-| **Clock Modulator**          | [ClockDivider](ClockDivider), [ClockSkip](Clock-Skipper), [DivSeq](DivSeq), [Metronome](Metronome), [PolyDiv](PolyDiv), [ProbDiv](ProbDiv), [ResetClk](Reset-Clock), [Shuffle](Shuffle)                                         |                                                                                          |
-| **CV Recorder**              | [ASR](ASR), [CVRec](CV-Recorder)                                                                                                                                                 |                                                                                          |
-| **Digital Logic**            | [Binary Counter](Binary-Counter), [Compare](Compare), [Cumulus](Cumulus), [Logic](Logic), [Schmitt](Schmitt-Trigger), [TL Neuron](Threshold-Logic-Neuron), [Trending](Trending)                                                         | [Neural Net](Neural-Net)                                                                             |
-| **Delay**                    | [Dr. LoFi](Dr.-LoFi), [GateDelay](Gate-Delay)  |   |
-| **Drums / Synth Voice**      | [BitBeat](BitBeat), [BootsNCat](BootsNCat), [BugCrack](BugCrack), [WTVCO](WTVCO)     | [Viznutcracker, sweet!](Viznutcracker-sweet)     |
-| **Effect**                   | [Dr. LoFi](Dr.-LoFi)    |                      |
-| **Envelope Follower**        | [EnvFollow](Envelope-Follower), [Slew](Slew)   |                 |
-| **Envelope Generator**       | [ADSR](ADSR-EG), [AD EG](AD-EG), [Ebb & LFO](Ebb-&-LFO), [EnvSeq](EnvSeq), [VectorEG](VectorEG)  | [Piqued](Piqued), [Dialectic Ping Pong](Dialectic-Ping-Pong) |
-| **LFO**                      | [Ebb & LFO](Ebb-&-LFO), [LowerRenz](LowerRenz), [Relabi](Relabi), [VectorLFO](VectorLFO)   | [Quadraturia](Quadraturia) |
-| **MIDI**                     | [MIDI In](MIDI-Input), [MIDI Out](MIDI-Out) _(See also: [MIDI Maps](MIDI-Maps), [Auto MIDI Output](Hemisphere-General-Settings#auto-midi-output))_   | [Captain MIDI](Captain-MIDI) |
-| **Mixer**                    | [AttenOff](AttenOff), [Calculate](Calculate), [Combin8](Combin8), [Panner](Panner), [Squanch](Squanch), [Xfader](Xfader) |    |
-| **Modulation Source**        | [GameOfLife](GameOfLife), [Relabi](Relabi) [Stairs](Stairs), [VectorMorph](VectorMorph) | [Low-rents](Low-rents), [Pong](Pong) |
-| **Performance Utility**      | [Button2](Button2), [Voltage](Voltage) |  [Scenery](Scenery) |
-| **Pitch Sequencer**          | [Carpeggio](Carpeggio), [TwoRings](TwoRings), [Enigma Jr.](Enigma-Jr), [MarkoV](MarkoV), [Pigeons](Pigeons), [ProbMeloD](ProbMeloD), [Seq32](Seq32), [SeqPlay7](SeqPlay7), [SequenceX](SequenceX), [Shredder](Shredder), [Strum](Strum), [SwitchSeq](Switch-Seq), [TB-3PO](TB-3PO) | [Enigma](Enigma), [The Darkest Timeline](The-Darkest-Timeline), [Automatonnetz](Automatonnetz), [Sequins](Sequins), [Acid Curds](Acid-Curds), [Passencore](Passencore) |
-| **Quantizer**               | [Calibr8](Calibr8), [Chordinate](Chordinate), [DualQuant](Dual-Quantizer), [DuoTET](DuoTET), [MultiScale](MultiScale), [ScaleDuet](ScaleDuet), [Squanch](Squanch)         | [Calibr8or](Calibr8or), [Harrington 1200](Harrington-1200), [Quantermain](Quantermain), [Meta-Q](Meta-Q)                                  |
-| **Random / Chaos**           | [BitBeat](BitBeat), [Brancher](Brancher), [Calculate](Calculate), [LowerRenz](LowerRenz), [ProbDiv](ProbDiv), [ProbMeloD](ProbMeloD), [Relabi](Relabi), [RndWalk](Random-Walk), [Shredder](Shredder)                                                        | [Low-rents](Low-rents)                                                                              |
-| **Shift Register**           | [ASR](ASR), [TwoRings](TwoRings), [Enigma Jr.](Enigma-Jr), [RunglBook](RunglBook), [ShiftGate](ShiftGate)  | [Enigma](Enigma), [CopierMaschine](Copiermaschine)  |
-| **Switch**                   | [Switch](Switch), [SwitchSeq](Switch-Seq) | [Scenery](Scenery) |
-| **Trigger / Gate Sequencer** | [Burst](Burst), [DivSeq](DivSeq), [DrumMap](DrumMap), [EuclidX](EuclidX), [MarkovPerc](MarkovPerc), [PolyDiv](PolyDiv), [ProbDiv](ProbDiv), [Seq32](Seq32), [ShiftGate](ShiftGate), [TrigSeq](TrigSeq), [TrigSeq16](TrigSeq16)   |     |
-| **VCA**                      | [GatedVCA](Gated-VCA)        |       |
-| **Voltage Utility**          | [AttenOff](AttenOff), [Calculate](Calculate), [Calibr8](Calibr8), [Scope](Scope), [Slew](Slew), [Stairs](Stairs), [Switch](Switch), [Tuner](Tuner), [Trending](Trending), [Voltage](Voltage)                         | [Calibr8or](Calibr8or), [References](References)
-
-If something is missing, please help us out by making edits and sending a PR (link in footer). Remember, T32 is very limited, so you won't necessarily have every App or Applet on this page in your module!

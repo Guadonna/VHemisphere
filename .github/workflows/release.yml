@@ -5,7 +5,7 @@ on:
       tag:
         description: Existing release tag to build
         required: true
-        default: v0.2.0
+        default: v0.2.1
         type: string
 permissions:
   contents: write
@@ -34,7 +34,8 @@ jobs:
           set -euo pipefail
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           mkdir release
-          cp software/.pio/build/VHemisphere/VHemisphere-*.hex release/
+          firmware="VHemisphere-${RELEASE_TAG}-Teensy40.hex"
+          cp "software/.pio/build/VHemisphere/$firmware" release/
           cp README.md release/README.md
           (cd release && sha256sum *.hex README.md > SHA256SUMS)
           cp README.md release-notes.md

@@ -1,5 +1,5 @@
 #if defined(VHEMISPHERE_OUTPUT_RANGE) && !defined(ARDUINO_TEENSY40)
-#error "VHemisphere 0.2 targets Teensy 4.0 only; use the matching release for other boards."
+#error "VHemisphere requires Teensy 4.0 with the standard O_C pinout."
 #endif
 #ifndef OC_CONFIG_H_
 #define OC_CONFIG_H_
@@ -10,13 +10,8 @@
 
 // --- Hardware details --- //
 static constexpr int DIGITAL_INPUT_COUNT = 4;
-#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
-static constexpr int DAC_CHANNEL_COUNT = 8;
-static constexpr int ADC_CHANNEL_COUNT = 8;
-#else
 static constexpr int DAC_CHANNEL_COUNT = 4;
 static constexpr int ADC_CHANNEL_COUNT = 4;
-#endif
 
 // --- Timing --- //
 // 60us = 16.666...kHz : Works, SPI transfer ends 2uS before next ISR
@@ -51,11 +46,7 @@ static constexpr unsigned long SETTINGS_SAVE_TIMEOUT_MS = 1000;
 
 #define EEPROM_CALIBRATIONDATA_START 0
 
-#if defined(ARDUINO_TEENSY41)
-// T4.1 - 8 channels, 11 octaves
-#define EEPROM_CALIBRATIONDATA_END 224
-#define EEPROM_GLOBALSETTINGS_END 224
-#elif defined(__IMXRT1062__)
+#if   defined(__IMXRT1062__)
 // T4.0 - 4 channels, 11 octaves
 #define EEPROM_CALIBRATIONDATA_END 128
 #define EEPROM_GLOBALSETTINGS_END 128
@@ -76,12 +67,8 @@ static constexpr unsigned long SETTINGS_SAVE_TIMEOUT_MS = 1000;
 #define EEPROM_APPDATA_START EEPROM_GLOBALSETTINGS_END
 #define EEPROM_APPDATA_END EEPROMStorage::LENGTH
 
-#ifdef ARDUINO_TEENSY41
-#define EEPROM_APPDATA_BINARY_SIZE (EEPROM_APPDATA_END - EEPROM_APPDATA_START - 160)
-#else
 // This is the available space for all apps' settings (\sa OC_apps.ino)
 #define EEPROM_APPDATA_BINARY_SIZE (EEPROM_APPDATA_END - EEPROM_APPDATA_START - 32)
-#endif
 
 #define OC_ENCODERS_ENABLE_ACCELERATION_DEFAULT true
 

@@ -37,10 +37,6 @@
 #if defined(__IMXRT1062__)
 #include <USBHost_t36.h>
 
-#if defined(ARDUINO_TEENSY41)
-extern MIDIDevice_BigBuffer usbHostMIDI[2];
-extern midi::MidiInterface<midi::SerialMIDI<HardwareSerial> > MIDI1;
-#endif
 #endif
 
 namespace HS {

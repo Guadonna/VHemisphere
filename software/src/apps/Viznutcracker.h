@@ -356,17 +356,10 @@ private:
     { 255, 0, 255, "Loop end", NULL, settings::STORAGE_TYPE_U8 },
     { OC::DIGITAL_INPUT_1, OC::DIGITAL_INPUT_1, OC::DIGITAL_INPUT_4, "Trigger input", OC::Strings::trigger_input_names_none + 1, settings::STORAGE_TYPE_U4 },
     { 0, 0, 1, "Step mode", OC::Strings::no_yes, settings::STORAGE_TYPE_U4 },
-#ifdef ARDUINO_TEENSY41
-    { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV5 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
-    { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV6 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
-    { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV7 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
-    { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV8 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
-#else
     { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV1 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
     { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV2 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
     { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV3 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
     { BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_NONE, BYTEBEAT_CV_MAPPING_LAST - 1, "CV4 -> ", bytebeat_cv_mapping_names, settings::STORAGE_TYPE_U4 },
-#endif
   }};
 };
 SETTINGS_ARRAY_DEFINE(ByteBeat);
@@ -440,17 +433,10 @@ void AppQuadByteBeats::Init() {
 
 void FASTRUN AppQuadByteBeats::Process(OC::IOFrame *ioframe) {
   // TODO[PLD] Do we need the excessive smoothing?
-#ifdef ARDUINO_TEENSY41
-  cv1.push(ioframe->cv.values[ADC_CHANNEL_5]);
-  cv2.push(ioframe->cv.values[ADC_CHANNEL_6]);
-  cv3.push(ioframe->cv.values[ADC_CHANNEL_7]);
-  cv4.push(ioframe->cv.values[ADC_CHANNEL_8]);
-#else
   cv1.push(ioframe->cv.values[ADC_CHANNEL_1]);
   cv2.push(ioframe->cv.values[ADC_CHANNEL_2]);
   cv3.push(ioframe->cv.values[ADC_CHANNEL_3]);
   cv4.push(ioframe->cv.values[ADC_CHANNEL_4]);
-#endif
 
   const int32_t cvs[BYTEBEAT_CHANNEL_COUNT] = { cv1.value(), cv2.value(), cv3.value(), cv4.value() };
   uint32_t triggers = ioframe->digital_inputs.triggered();

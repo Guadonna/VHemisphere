@@ -219,11 +219,6 @@ public:
     void Controller() {
         // Process incoming MIDI traffic
         process_midi_in(usbMIDI);
-#ifdef ARDUINO_TEENSY41
-        process_midi_in(usbHostMIDI[0]);
-        process_midi_in(usbHostMIDI[1]);
-        process_midi_in(MIDI1);
-#endif
 
         // Convert CV inputs to outgoing MIDI messages
         process_midi_out();

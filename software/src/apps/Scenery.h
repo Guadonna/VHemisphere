@@ -257,16 +257,6 @@ public:
             trig_chan = 2;
         else if (Gate(3)) // TR4 - TODO: aux trigger modes, random, etc.
             trig_chan = 3;
-#ifdef ARDUINO_TEENSY41
-        else if (Gate(4)) // CV5
-            trig_chan = 4;
-        else if (Gate(5)) // CV6
-            trig_chan = 5;
-        else if (Gate(6)) // CV7
-            trig_chan = 6;
-        else if (Gate(7)) // CV8
-            trig_chan = 7;
-#endif
         // else, it's unchanged
 
         scene4seq = (In(3) > 2 * OCTAVE); // gate at CV4

@@ -15,20 +15,13 @@ Rotate either encoder to select, push to enter. Press one of the select buttons 
 
 The **randomize** action (indicated with strange symbols) resets Input Mappings and Clock settings to defaults, and picks applets at random for inspiration.
 
-![Preset Picker, Internal](images/Presets-LittleFS.png)
-
-The preset picker in Quadrants, using internal LittleFS storage (above) or microSD card (below)
-
-![Preset Picker, SD card](images/Presets-SD.png)
-
-saved Presets show the names of the applets in each slot, and the currently loaded slot is indicated with a Zap icon. In Quadrants, the current Bank is shown in the upper right corner, with inverted text when no SD card is detected/mounted. (Using an SD card is highly recommended!)
+Saved presets show the applet names; the current slot has a Zap icon.
 
 In this menu screen:
 * rotate LEFT Encoder to toggle between Load, Save, and DELETE.
-* (Quadrants only) Push LEFT Encoder to switch Banks.
 * Rotate/Push RIGHT Encoder to make a selection (rotate and push).
 
-Note that [release builds](https://github.com/djphazer/O_C-Phazerville/releases) have a varying number of preset slots depending on the hardware platform. For T32, the default is 8, but you can opt for 4, 8, or 16 with a [Custom Build](https://github.com/djphazer/O_C-Phazerville/discussions/38). T40 has 50 slots. T41 uses 32 slots per Bank, with virtually unlimited Bank files stored in flash or a microSD card.
+Teensy 4.0 provides 50 preset slots.
 
 ***
 
@@ -40,7 +33,7 @@ Sending MIDI Program Change messages will load the corresponding preset:
 * Value 2: Preset C
 * Value 3: Preset D
 
-...etcetera, up to however many presets are enabled in your build: 4, 8, or 16; 50 in T40; 32 per Bank in Quadrants.
+Continue up to 50 preset slots on Teensy 4.0.
 
 The MIDI Channel used to receive PC messages can be configured on the next page, [General Settings](Hemisphere-General-Settings).
 
@@ -52,4 +45,4 @@ If enabled, settings are automatically stored in the last loaded Preset when the
 
 ![Presets auto-save](images/Presets-autosave.png)
 
-When storing a Preset, settings are immediately written to EEPROM (or LFS storage on T4.0) - no need to manually do an [EEPROM Save](Saving-State), unless you need to save changes to global patterns, etc. Combined with Auto-save, this can result in frequent EEPROM writes... (only 100,000 write cycles are guaranteed, so use at your own risk!)
+Presets are written immediately to `VHEM40_PRESETS.DAT` in internal LittleFS storage. Save global settings separately when changing scales or waveforms.

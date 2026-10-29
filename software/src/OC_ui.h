@@ -43,13 +43,11 @@ enum UiControl : uint16_t {
 
 #if defined(VOR)
   CONTROL_BUTTON_LAST = 5,
-#elif defined(ARDUINO_TEENSY41)
-  CONTROL_BUTTON_LAST = 7,
 #else
   CONTROL_BUTTON_LAST = 4,
 #endif
 
-  // aliases for T41
+  // Shared UI button aliases
   CONTROL_BUTTON_A = CONTROL_BUTTON_UP,
   CONTROL_BUTTON_B = CONTROL_BUTTON_DOWN,
   CONTROL_BUTTON_X = CONTROL_BUTTON_UP2,

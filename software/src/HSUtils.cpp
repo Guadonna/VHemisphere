@@ -9,9 +9,6 @@
 #include "enigma/TuringMachine.h"
 #include "vector_osc/HSVectorOscillator.h"
 
-#ifdef ARDUINO_TEENSY41
-#include "SD.h"
-#endif
 
 const int ProportionCV(const int cv_value, const int max_pixels, const int max_cv) {
     int prop = constrain(Proportion(cv_value, max_cv, max_pixels), -max_pixels, max_pixels);
@@ -50,7 +47,7 @@ namespace HS {
   int next_ch = -1;
   int8_t next_octave, next_root_note;
 
-#if defined(ARDUINO_TEENSY41) || defined(VOR)
+#if defined(VOR)
   int octave_max = 6;
 #endif
 
@@ -360,66 +357,6 @@ namespace HS {
     }
   }
 
-#ifdef ARDUINO_TEENSY41
-  void DrawMidiRouting(int cursor) {
-    static const uint8_t ports[] = {
-      mMaskSerial, mMaskUSBDev, mMaskUSBHost, mMaskUSBHost2
-    };
-    static const uint8_t *const disabled[] = {
-      &midi_thru_disable,
-      &midi_clkrx_disable,
-      &midi_clktx_disable,
-      &midi_msgrx_disable,
-      &midi_msgtx_disable
-    };
-    static const char *const row_names[] = {
-      "Thru", "ClkRx", "ClkTx", "MsgRx", "MsgTx"
-    };
-    static const char *const port_names[] = { "Ser", "USB", "H1", "H2" };
-
-    gfxHeader("<   MIDI Routing   >");
-    for (int col = 0; col < 4; ++col)
-      gfxPrint(39 + 22 * col, 12, port_names[col]);
-
-    for (int row = 0; row < 5; ++row) {
-      const int y = 20 + 9 * row;
-      gfxPrint(1, y, row_names[row]);
-      for (int col = 0; col < 4; ++col) {
-        const int x = 40 + 22 * col;
-        if (!(*disabled[row] & ports[col]))
-          gfxRect(x, y, 7, 7);
-        else
-          gfxFrame(x, y, 7, 7);
-
-        if (cursor == row * 4 + col) gfxIcon(x + 9, y, LEFT_ICON);
-      }
-    }
-  }
-
-  void ToggleMidiRouting(int cursor) {
-    static const uint8_t ports[] = {
-      mMaskSerial, mMaskUSBDev, mMaskUSBHost, mMaskUSBHost2
-    };
-    uint8_t *const disabled[] = {
-      &midi_thru_disable,
-      &midi_clkrx_disable,
-      &midi_clktx_disable,
-      &midi_msgrx_disable,
-      &midi_msgtx_disable
-    };
-
-    const int row = cursor / 4;
-    const uint8_t port = ports[cursor % 4];
-    *disabled[row] ^= port;
-
-    if (row == 0 && port == mMaskSerial) {
-      if (midi_thru_disable & mMaskSerial)
-        MIDI1.turnThruOff();
-      else
-        MIDI1.turnThruOn();
-    }
-  }
-#endif
 
   void DrawMenuPopup(const int config_cursor) {
     enum ConfigCursor {

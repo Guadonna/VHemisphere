@@ -22,15 +22,8 @@ public:
 
 class FreqMeasureClass {
 public:
-#ifdef ARDUINO_TEENSY40
-  // T4.0 on old hardware
-  // pins already defined as macros in OC_gpio.h
-#else
-  // T4.1 on new hardware
-  // static local copies of expected pin numbers, dynamically assigned in OC_gpio.cpp
-  // TODO: this could be made dynamic if we care about supporting T4.1 on old hardware
-  static constexpr uint8_t TR1 = 0, TR2 = 1, TR3 = 23, TR4 = 22;
-#endif
+  // Trigger pins are supplied by OC_gpio.h for Teensy 4.0.
+
 
 	// supports up to 4 simultaneously running instances
 	FreqMeasureClass() { running = false; }

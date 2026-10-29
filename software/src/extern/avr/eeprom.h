@@ -36,8 +36,6 @@
 
 #if defined(ARDUINO_TEENSY40)
   #define E2END 0xBFF // 0x437
-#elif defined(ARDUINO_TEENSY41)
-  #define E2END 0x10BB
 #elif defined(ARDUINO_TEENSY_MICROMOD)
   #define E2END 0x10BB
 #elif defined(__MK20DX128__) || defined(__MK20DX256__)

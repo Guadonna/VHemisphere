@@ -71,11 +71,7 @@ public:
   void SwitchToStep(int direction) {
 
 #ifdef VHEMISPHERE_OUTPUT_RANGE
-#ifdef ARDUINO_TEENSY41
-      constexpr auto last_dac_step = DAC_H_VOLT_HIGH;
-#else
       constexpr auto last_dac_step = DAC_D_VOLT_HIGH;
-#endif
       const auto next = VHemisphere::move_calibration(
           {calstate.step, current_octave}, direction, DAC_A_VOLT_MIN, last_dac_step, DAC::kOctaveZero);
       if (next.step == calstate.step) {
@@ -133,9 +129,6 @@ public:
               // copy DAC A to the rest of them, to make life easier
               const DAC_CHANNEL chan[DAC_CHANNEL_COUNT] = {
                 DAC_CHANNEL_A, DAC_CHANNEL_B, DAC_CHANNEL_C, DAC_CHANNEL_D,
-#ifdef ARDUINO_TEENSY41
-                DAC_CHANNEL_E, DAC_CHANNEL_F, DAC_CHANNEL_G, DAC_CHANNEL_H,
-#endif
               };
               for (int ch = 1; ch < DAC_CHANNEL_COUNT; ++ch) {
                 for (int i = 0; i < OCTAVES; ++i) {
@@ -335,8 +328,6 @@ public:
       #if defined(ARDUINO_TEENSY40)
       gfxPrint(100, 0, "T4.0");
       //gfxPrint(0, 45, "E2END="); gfxPrint(E2END);
-      #elif defined(ARDUINO_TEENSY41)
-      gfxPrint(100, 0, "T4.1");
       #else
       gfxPrint(100, 0, "T3.2");
       #endif
@@ -354,12 +345,7 @@ public:
       gfxPrint(10, 35, OC::Strings::BUILD_TAG);
       gfxIcon(0, 45, PhzIcons::frontBack);
       gfxPrint(10, 45, "CV +/-1V; Gate 0/1V");
-#ifdef MULTIBOOT
-      gfxPrint(0, 55, reflash ? "[Reflash]  [BootMenu]"
-                              : "[CALIBRATE]   [RESET]");
-#else
       gfxPrint(0, 55, reflash ? "[Reflash]" : "[CALIBRATE]   [RESET]");
-#endif
   }
 
   void DrawCalibration() const {
@@ -506,11 +492,6 @@ public:
             StartCalibration();
         }
         if (event.control == OC::CONTROL_BUTTON_R && event.type == UI::EVENT_BUTTON_PRESS) {
-#ifdef MULTIBOOT
-          if (reflash)
-            BootMenu(true);
-          else
-#endif
             FactoryReset();
         }
 
@@ -685,9 +666,6 @@ void AppSettings::Process(OC::IOFrame *ioframe) {
   if (ioframe->outputs.calibration_bypass) {
     const DAC_CHANNEL channels[] = { DAC_CHANNEL_A, DAC_CHANNEL_B, DAC_CHANNEL_C,
       DAC_CHANNEL_D
-#ifdef ARDUINO_TEENSY41
-      , DAC_CHANNEL_E, DAC_CHANNEL_F, DAC_CHANNEL_G, DAC_CHANNEL_H
-#endif
     };
     for (int i = 0; i < DAC_CHANNEL_COUNT; ++i) {
       uint16_t value = OC::DAC::get_zero_offset(channels[i]);

@@ -18,9 +18,6 @@ bool ADC33131D_Uses_FlexIO=false;
 bool OLED_Uses_SPI1=false;
 bool Large_OLED=false;
 bool DAC8568_Uses_SPI=false;
-#if !defined(NORTHERNLIGHT) && defined(ARDUINO_TEENSY41)
-bool NorthernLightModular=false;
-#endif
 bool I2S2_Audio_ADC=false;
 bool I2S2_Audio_DAC=false;
 bool I2C_Expansion=false;
@@ -28,26 +25,12 @@ bool MIDI_Uses_Serial8=false;
 float id_voltage = 0.0;
 bool flip_mode = false;
 bool SDcard_Ready = false;
-#ifdef ARDUINO_TEENSY41
-bool DAC_20Vpp = false;
-bool CalSynthXL = false;
-bool NLMSerge = false;
-bool DAC_is_inverted = false;
-#endif
 
 float OC::GetIDVoltage() {
   return OC::ADC::Read_ID_Voltage();
 }
 int OC::GetIDIndex() {
-  if (id_voltage < 0.05f) return 1; // O_C
-  if (id_voltage < 0.11f) return 2; // O_C T4.1 Rev3 prototypes
-  if (id_voltage < 0.25f) return 3; // O.R.N.8 with 20Vpp DAC
-  if (id_voltage < 0.35f) return 4; // Calsynth XLOC2
-  if (id_voltage < 0.45f) return 5; // NLM Xenomorpher Serge format
-  if (id_voltage < 0.55f) return 6; // NLM Xenomorpher Buchla format
-
-  // invalid/unsupported HW ID voltage
-  return 0;
+  return 1; // Standard O_C Teensy 4.0 hardware.
 }
 
 FLASHMEM
@@ -150,111 +133,3 @@ void OC::SetFlipMode(bool flip_180) {
     }
   }
 }
-
-#if defined(ARDUINO_TEENSY41)
-FLASHMEM
-void OC::Pinout_Detect() {
-  id_voltage = OC::ADC::Read_ID_Voltage();
-  const int f = int(floor(id_voltage * 1000));
-  const int value = f / 1000;
-  const int cents = f % 1000;
-  Serial.printf("ID voltage (pin A17) = %1d.%03d\n", value, cents);
-
-  // Defaults for all ORN8 hardware
-  if (id_voltage >= 0.05f) { // && id_voltage < 0.15f) {
-    //CV1 = 255;
-    //CV2 = 255;               // CV inputs with ADC33131D
-    //CV3 = 255;
-    //CV4 = 255;
-    TR1 = 0;
-    TR2 = 1;
-    TR3 = 23;
-    TR4 = 22;
-    but_top = 29;
-    but_top2 = 28;
-    but_bot = 14;
-    but_bot2 = 15;
-    but_mid = 20;
-    OLED_Uses_SPI1 = true;   // pins 26=MOSI, 27=SCK
-    OLED_DC = 39;
-    OLED_RST = 38;
-    OLED_CS = 40;
-    DAC8568_Uses_SPI = true; // pins 10=CS, 11=MOSI, 13=SCK
-    DAC_CS = 255;            // pin 10 controlled by SPI hardware
-    DAC_RST = 255;
-    encR1 = 36;
-    encR2 = 37;
-    butR  = 25;
-    encL1 = 30;
-    encL2 = 31;
-    butL  = 24;
-    OC_GPIO_DEBUG_PIN1 = 16;
-    OC_GPIO_DEBUG_PIN2 = 17;
-    ADC33131D_Uses_FlexIO = true; // pins 7=A0, 6=A1, 8=SCK, 9=CS, 12=DATA, 32=A2
-    I2S2_Audio_ADC = true;        // pins 3=LRCLK, 4=BCLK, 5=DATA, 33=MCLK
-    I2S2_Audio_DAC = true;        // pins 2=DATA, 3=LRCLK, 4=BCLK, 33=MCLK
-    I2C_Expansion = true;         // pins 18=SDA, 19=SCL
-    MIDI_Uses_Serial8 = true;     // pins 34=IN, 35=OUT
-  }
-
-  // any HW_ID significantly higher than the reference design will use +/-10V at the outputs
-  DAC_20Vpp = (id_voltage >= 0.11 && id_voltage <= 0.25);
-
-  // 0.4v for Serge variant from NLM, or others that want -5v to +5v output range
-  NLMSerge = (id_voltage >= 0.35 && id_voltage <= 0.45);
-  if (NLMSerge) {
-    DAC::kOctaveZero = 5;
-    HS::octave_max = 5;
-
-    DAC_is_inverted = true;
-  }
-
-  // 0.3v for CalSynth and 0.5v for NLM both need slower SPI clock for larger screens
-  Large_OLED = (id_voltage >= 0.25);
-
-  CalSynthXL = (id_voltage >= 0.25 && id_voltage <= 0.35);
-  if (CalSynthXL) {
-    DAC_20Vpp = true;
-    // remapped buttons and I/O here
-    but_top  = 29; // 'A'
-    but_top2 = 20; // 'X'
-    but_bot  = 28; // 'B'
-    but_bot2 = 14; // 'Y'
-    but_mid  = 15; // 'Z'
-    // TODO: flip_mode?
-
-    // output rows are inverted
-    DAC_CHANNEL_A = 4;
-    DAC_CHANNEL_B = 5;
-    DAC_CHANNEL_C = 6;
-    DAC_CHANNEL_D = 7;
-    DAC_CHANNEL_E = 0;
-    DAC_CHANNEL_F = 1;
-    DAC_CHANNEL_G = 2;
-    DAC_CHANNEL_H = 3;
-
-    // input rows are inverted
-    ADC_CHANNEL_1 = 4;
-    ADC_CHANNEL_2 = 5;
-    ADC_CHANNEL_3 = 6;
-    ADC_CHANNEL_4 = 7;
-    ADC_CHANNEL_5 = 0;
-    ADC_CHANNEL_6 = 1;
-    ADC_CHANNEL_7 = 2;
-    ADC_CHANNEL_8 = 3;
-  }
-
-  if (DAC_20Vpp) {
-    DAC::kOctaveZero = 5;
-    HS::octave_max = 10;
-  }
-
-  // 0.5v for Northern Light - unipolar Buchla format
-  NorthernLightModular = NorthernLightModular || (id_voltage >= 0.45f);
-  if (NorthernLightModular) {
-    DAC::kOctaveZero = 0;
-    HS::octave_max = 10;
-    DAC_is_inverted = true;
-  }
-}
-#endif

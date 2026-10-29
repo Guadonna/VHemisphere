@@ -41,9 +41,6 @@ _Note: Some applets (eg. Button2) may not conform to the modal cursor behaviour.
 
 ***
 
-### Preset Bank# (Quadrants only)
-The currently loaded bank can be switched here in addition to the [Presets](Hemisphere-Presets) picker menu.
-
 ### Preset Jump Trigger
 _(New in v1.12!)_
 This is a configurable Trigger Input mapping, with multiplier/divider, used to simply load the next preset in sequence. Just like any other [Input Mapping](Hemisphere-Input-Mapping), it can be assigned to any of the physical input jacks, applet outputs A, B, C, etc., MIDI Maps, or internal Clock. It is triggered when the selected input goes high (above a certain threshold, typically 1.5V). If the Clock is running, the preset load action synchronizes to the next Beat.

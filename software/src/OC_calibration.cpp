@@ -51,12 +51,6 @@ const CalibrationData kCalibrationDefaults = {
     {1285, 7580, 13876, 20171, 26468, 32764, 39061, 45357, 51655, 57952, 64248},
     {1285, 7580, 13876, 20171, 26468, 32764, 39061, 45357, 51655, 57952, 64248}
 #else
-  #ifdef ARDUINO_TEENSY41
-    {0, 6553, 13107, 19661, 26214, 32768, 39321, 45875, 52428, 58981, 65535},
-    {0, 6553, 13107, 19661, 26214, 32768, 39321, 45875, 52428, 58981, 65535},
-    {0, 6553, 13107, 19661, 26214, 32768, 39321, 45875, 52428, 58981, 65535},
-    {0, 6553, 13107, 19661, 26214, 32768, 39321, 45875, 52428, 58981, 65535},
-  #endif
     {0, 6553, 13107, 19661, 26214, 32768, 39321, 45875, 52428, 58981, 65535},
     {0, 6553, 13107, 19661, 26214, 32768, 39321, 45875, 52428, 58981, 65535},
     {0, 6553, 13107, 19661, 26214, 32768, 39321, 45875, 52428, 58981, 65535},
@@ -66,9 +60,6 @@ const CalibrationData kCalibrationDefaults = {
   },
   // ADC
   { {
-#ifdef ARDUINO_TEENSY41
-      _ADC_OFFSET, _ADC_OFFSET, _ADC_OFFSET, _ADC_OFFSET,
-#endif
       _ADC_OFFSET, _ADC_OFFSET, _ADC_OFFSET, _ADC_OFFSET
     },
     OC::ADC::kDefaultPitchCVScale, // pitch_cv_scale
@@ -90,30 +81,15 @@ PROGMEM
 const CalibrationData kNLMCalibrationDefaults = {
   // DAC
   { {
-#ifdef ARDUINO_TEENSY41
-    // Xenomorpher
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100},
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100},
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100},
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100},
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100},
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100},
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100},
-    {200, 6500, 12900, 19200, 25500, 32700, 38000, 44300, 50600, 56900, 63100}
-#else
     // cardOC or hOC with T40
     {390, 6800, 13200, 19650, 26100, 32500, 38900, 45400, 51800, 58200, 64600},
     {390, 6800, 13200, 19650, 26100, 32500, 38900, 45400, 51800, 58200, 64600},
     {390, 6800, 13200, 19650, 26100, 32500, 38900, 45400, 51800, 58200, 64600},
     {390, 6800, 13200, 19650, 26100, 32500, 38900, 45400, 51800, 58200, 64600}
-#endif
     },
   },
   // ADC
   { {
-#ifdef ARDUINO_TEENSY41
-      _ADC_OFFSET_NLM, _ADC_OFFSET_NLM, _ADC_OFFSET_NLM, _ADC_OFFSET_NLM,
-#endif
       _ADC_OFFSET_NLM, _ADC_OFFSET_NLM, _ADC_OFFSET_NLM, _ADC_OFFSET_NLM
     },
     OC::ADC::kDefaultPitchCVScale, // pitch_cv_scale
@@ -127,32 +103,10 @@ const CalibrationData kNLMCalibrationDefaults = {
   0 // reserved1
 };
 
-#ifdef ARDUINO_TEENSY41
-PROGMEM
-const DAC::CalibrationData kDACSergeDefaults = {
-  {
-    // Xenomorpher for Serge
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900},
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900},
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900},
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900},
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900},
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900},
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900},
-    {2200, 8200, 14200, 20200, 26200, 32200, 38100, 44050, 50050, 55950, 61900}
-  }
-};
-#endif
 
 PROGMEM
 const DAC::CalibrationData kDAC20VppDefaults = {
   {
-  #ifdef ARDUINO_TEENSY41
-    {936, 7303, 13670, 20037, 26404, 32771, 39138, 45505, 51872, 58239, 64610},
-    {936, 7303, 13670, 20037, 26404, 32771, 39138, 45505, 51872, 58239, 64610},
-    {936, 7303, 13670, 20037, 26404, 32771, 39138, 45505, 51872, 58239, 64610},
-    {936, 7303, 13670, 20037, 26404, 32771, 39138, 45505, 51872, 58239, 64610},
-  #endif
     {936, 7303, 13670, 20037, 26404, 32771, 39138, 45505, 51872, 58239, 64610},
     {936, 7303, 13670, 20037, 26404, 32771, 39138, 45505, 51872, 58239, 64610},
     {936, 7303, 13670, 20037, 26404, 32771, 39138, 45505, 51872, 58239, 64610},
@@ -169,11 +123,6 @@ static constexpr uint16_t DAC_OFFSET = 4890; // DAC offset, initial approx., ish
 FLASHMEM void calibration_reset() {
   if (NorthernLightModular || NLMSerge) {
     memcpy(&OC::calibration_data, &kNLMCalibrationDefaults, sizeof(OC::calibration_data));
-#ifdef ARDUINO_TEENSY41
-    if (NLMSerge) {
-      memcpy(&OC::calibration_data.dac, &kDACSergeDefaults, sizeof(OC::calibration_data.dac));
-    }
-#endif
   } else {
     memcpy(&OC::calibration_data, &kCalibrationDefaults, sizeof(OC::calibration_data));
     if (DAC_20Vpp) {
@@ -233,11 +182,7 @@ const char * const start_footer   = "[CANCEL]         [OK]";
 const char * const end_footer     = "[PREV]         [EXIT]";
 const char * const default_footer = "[PREV]         [NEXT]";
 const char * const default_help_r = "[R] => Adjust";
-#ifdef ARDUINO_TEENSY41
-const char * const long_press_hint = "Hold [B] to set";
-#else
 const char * const long_press_hint = "Hold [DOWN] to set";
-#endif
 const char * const select_help    = "[R] => Select";
 
 PROGMEM
@@ -282,19 +227,6 @@ const CalibrationStep calibration_steps[CALIBRATION_STEP_LAST] = {
     { DAC_D_VOLT_MIN, "DAC D (min)", "", default_help_r, default_footer, CALIBRATE_OCTAVE, 0, nullptr, 0, DAC::MAX_VALUE },
     { DAC_D_VOLT_HIGH,  "DAC D (high)", "", long_press_hint, default_footer, CALIBRATE_OCTAVE, 8, nullptr, 0, DAC::MAX_VALUE },
 
-#ifdef ARDUINO_TEENSY41
-    { DAC_E_VOLT_MIN, "DAC E (min)", "", default_help_r, default_footer, CALIBRATE_OCTAVE, 0, nullptr, 0, DAC::MAX_VALUE },
-    { DAC_E_VOLT_HIGH,  "DAC E (high)", "", long_press_hint, default_footer, CALIBRATE_OCTAVE, 8, nullptr, 0, DAC::MAX_VALUE },
-
-    { DAC_F_VOLT_MIN, "DAC F (min)", "", default_help_r, default_footer, CALIBRATE_OCTAVE, 0, nullptr, 0, DAC::MAX_VALUE },
-    { DAC_F_VOLT_HIGH,  "DAC F (high)", "", long_press_hint, default_footer, CALIBRATE_OCTAVE, 8, nullptr, 0, DAC::MAX_VALUE },
-
-    { DAC_G_VOLT_MIN, "DAC G (min)", "", default_help_r, default_footer, CALIBRATE_OCTAVE, 0, nullptr, 0, DAC::MAX_VALUE },
-    { DAC_G_VOLT_HIGH,  "DAC G (high)", "", long_press_hint, default_footer, CALIBRATE_OCTAVE, 8, nullptr, 0, DAC::MAX_VALUE },
-
-    { DAC_H_VOLT_MIN, "DAC H (min)", "", default_help_r, default_footer, CALIBRATE_OCTAVE, 0, nullptr, 0, DAC::MAX_VALUE },
-    { DAC_H_VOLT_HIGH,  "DAC H (high)", "", long_press_hint, default_footer, CALIBRATE_OCTAVE, 8, nullptr, 0, DAC::MAX_VALUE },
-#endif
   #endif
 
   #ifdef VOR
