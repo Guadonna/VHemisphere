@@ -1,0 +1,822 @@
+// Copyright (c) 2015, 2016 Max Stadler, Patrick Dowling
+//
+// Original Author : Max Stadler
+// Heavily modified: Patrick Dowling (pld@gurkenkiste.com)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+// Main startup/loop for O&C firmware
+
+#include <Arduino.h>
+#include <EEPROM.h>
+
+#include "OC_core.h"
+#include "OC_app_switcher.h"
+#include "OC_apps.h"
+#include "OC_DAC.h"
+#include "OC_debug.h"
+#include "OC_gpio.h"
+#include "OC_global_settings.h"
+#include "OC_ADC.h"
+#include "OC_calibration.h"
+#include "OC_digital_inputs.h"
+#include "OC_menus.h"
+#include "OC_strings.h"
+#include "OC_ui.h"
+#include "OC_options.h"
+#include "src/drivers/display.h"
+#include "src/drivers/ADC/OC_util_ADC.h"
+#include "util/util_debugpins.h"
+#include "VBiasManager.h"
+#include "HSMIDI.h"
+
+#include "PhzConfig.h"
+
+#if defined(ARDUINO_TEENSY41)
+USBHost thisUSB;
+USBHub hub1(thisUSB);
+MIDIDevice_BigBuffer usbHostMIDI[2] {
+  MIDIDevice_BigBuffer(thisUSB),
+  MIDIDevice_BigBuffer(thisUSB)
+};
+#ifdef USB_GAMEPAD
+USBHIDParser hid1(thisUSB);
+JoystickController joystick(thisUSB);
+#endif
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial8, MIDI1);
+#include "AudioIO.h"
+#include "usb_desc.h"
+#include "Wire.h"
+#ifdef MULTIBOOT
+#include "util/cachedisable.h"
+#endif
+
+FLASHMEM __attribute__((noinline)) 
+void ScanI2C() {
+  noInterrupts();
+
+  Serial.println("...Scanning i2c addresses...");
+  uint8_t error;
+  for (uint8_t address = 1; address < 127; address++) {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.println(address, HEX);
+    } else if (error == 4) {
+      Serial.print("Unknown error at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.println(address, HEX);
+    } //else { Serial.print("Nothing happened at address 0x"); }
+  }
+
+  interrupts();
+}
+#endif // ARDUINO_TEENSY41
+
+uint_fast8_t MENU_REDRAW = true;
+static OC::UiMode ui_mode = OC::UI_MODE_MENU;
+static OC::IOFrame io_frame;
+
+/*  ------------------------ UI timer ISR ---------------------------   */
+
+IntervalTimer UI_timer;
+
+void FASTRUN UI_timer_ISR() {
+  OC_DEBUG_PROFILE_SCOPE(OC::DEBUG::UI_cycles);
+  OC::ui.Poll();
+  OC_DEBUG_RESET_CYCLES(OC::ui.ticks(), 2048, OC::DEBUG::UI_cycles);
+}
+
+/*  ------------------------ core timer ISR ---------------------------   */
+IntervalTimer CORE_timer;
+volatile bool OC::CORE::app_isr_enabled = false;
+volatile bool OC::CORE::display_update_enabled = false;
+volatile bool OC::CORE::app_loop_enabled = false;
+volatile uint32_t OC::CORE::ticks = 0;
+
+void FASTRUN CORE_timer_ISR() {
+  DEBUG_PIN_SCOPE(OC_GPIO_DEBUG_PIN2);
+  OC_DEBUG_PROFILE_SCOPE(OC::DEBUG::ISR_cycles);
+
+  using namespace OC;
+
+  // DAC and display share SPI. By first updating the DAC values, then starting
+  // a DMA transfer to the display things are fairly nicely interleaved. In the
+  // next ISR, the display transfer is finalized (CS update).
+
+  display::Flush();
+  DAC::Update();
+  display::Update();
+
+  // see OC_ADC.h for details; empirically (with current parameters), Scan_DMA() picks up new samples @ 5.55kHz
+  OC::ADC::Scan_DMA();
+
+  // Pin changes are tracked in separate ISRs, so depending on prio it might
+  // need extra precautions. Note: This call is required to clear flags
+  DigitalInputs::Scan();
+
+  ++CORE::ticks;
+  if (CORE::app_isr_enabled) {
+    OC::app_switcher.Process(&io_frame);
+  }
+
+  OC_DEBUG_RESET_CYCLES(OC::CORE::ticks, 16384, OC::DEBUG::ISR_cycles);
+}
+
+/*       ---------------------------------------------------------         */
+
+#ifdef MULTIBOOT
+extern "C" {
+  static void jump_to_alt(uint32_t choice) {
+    const uint32_t JUMP_ADDR = 0x60000000 + (choice * 0x100000);
+    uint32_t instptr = JUMP_ADDR + 0x1000 + sizeof(uint32_t);
+    uint32_t instaddr = *(uint32_t*)instptr;
+    ((void (*)(void))instaddr)();
+  }
+}
+
+// boot-time only; noinline so FLASHMEM sticks (free-function LTO rule)
+FLASHMEM __attribute__((noinline)) void BootMenu(const bool show) {
+  bool save = false;
+  int choice = -1;
+
+  while (show) {
+    const bool z_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_Z);
+    const bool a_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_A);
+    const bool b_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_B);
+    const bool x_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_X);
+    const bool y_held = OC::ui.read_immediate(OC::CONTROL_BUTTON_Y);
+    const bool any_held = (a_held || b_held || z_held || x_held || y_held);
+
+    if (a_held) choice = 0;
+    if (b_held) choice = 1;
+    if (x_held) choice = 2;
+    if (y_held) choice = 3;
+    if (choice > -1) {
+      if (OC::calibration_data.bootchoice() != choice) {
+        OC::calibration_data.set_bootchoice(choice);
+        if (z_held) {
+          save = true;
+        }
+      }
+      if (!any_held)
+        break;
+    }
+
+    GRAPHICS_BEGIN_FRAME(true);
+    graphics.setPrintPos(1, 5);
+    graphics.print("USB Device Mode:");
+
+    graphics.setPrintPos(1, 15);
+    graphics.print("A: MIDI + Audio");
+    if (any_held && 0 == OC::calibration_data.bootchoice()) {
+      graphics.invertRect(1, 15, 127, 9);
+    }
+    graphics.setPrintPos(1, 25);
+    graphics.print("B: MIDI");
+    if (any_held && 1 == OC::calibration_data.bootchoice()) {
+      graphics.invertRect(1, 25, 127, 9);
+    }
+    graphics.setPrintPos(1, 35);
+    graphics.print("X: MTP + O_C Stock");
+    if (any_held && 2 == OC::calibration_data.bootchoice()) {
+      graphics.invertRect(1, 35, 127, 9);
+    }
+    graphics.setPrintPos(1, 45);
+    graphics.print("Y: (HW Debug)");
+    if (any_held && 3 == OC::calibration_data.bootchoice()) {
+      graphics.invertRect(1, 45, 127, 9);
+    }
+
+    graphics.setPrintPos(1, 55);
+    graphics.print("(hold Z to set)");
+    GRAPHICS_END_FRAME();
+
+    delay(10);
+  }
+
+  if (save) {
+    OC::calibration_save();
+  }
+
+  // check choice and jump
+  if (OC::calibration_data.bootchoice() == 3) {
+    for (int i = 0; i < DAC_CHANNEL_COUNT; ++i) {
+      // -3V to +4V
+      OC::DAC::set_octave(DAC_CHANNEL(i), i-3);
+    }
+    OC::ui.DebugStats();
+  } else if (OC::calibration_data.bootchoice() != MULTIBOOT) {
+    GRAPHICS_BEGIN_FRAME(true);
+    graphics.setPrintPos(1, 28);
+    graphics.print("Switching to alt mode!");
+    GRAPHICS_END_FRAME();
+    AudioNoInterrupts();
+    delay(10);
+    disableCache();
+    jump_to_alt(OC::calibration_data.bootchoice());
+  }
+}
+#endif
+
+#if defined(__IMXRT1062__)
+// fill DMAMEM with zeroes to be safe
+extern unsigned long _heap_start;
+extern "C" FLASHMEM void startup_middle_hook(void) {
+  memset((void *)0x20200000, 0, (uint32_t)&_heap_start - 0x20200000u);
+}
+
+
+// ---------------------------------------------------------------------------
+// Crash forensics + hardware watchdog (T4.x)
+// ---------------------------------------------------------------------------
+
+// temp buffer to capture CrashReport text at boot
+static DMAMEM char crash_buf[1024];
+class BufferPrint : public Print {
+public:
+  char *buf = crash_buf;
+  size_t len = 0;
+  size_t write(uint8_t c) override {
+    if (len < sizeof(crash_buf) - 1) { buf[len++] = c; buf[len] = 0; return 1; }
+    return 0;
+  }
+};
+static BufferPrint crash_capture;
+
+// Reset cause, captured then cleared at boot: SRSR bits are sticky w1c and
+// would otherwise show every cause since the last power-on, forever.
+static uint32_t boot_srsr = 0;
+
+// WDOG1: 128s timeout, fed only from loop().
+// a hard loop() hang reboots instead of bricking the module until power-cycle.
+static bool watchdog_armed = false;
+FLASHMEM static void watchdog_arm() {
+  CCM_CCGR3 |= CCM_CCGR3_WDOG1(CCM_CCGR_ON);
+  asm volatile("dsb");
+  WDOG1_WMCR = 0;
+  WDOG1_WCR = (uint16_t)(255u << 8)  // WT: (255+1)*0.5s = 128s
+            | WDOG_WCR_WDE | WDOG_WCR_SRS | WDOG_WCR_WDA
+            | WDOG_WCR_WDBG | WDOG_WCR_WDZST;
+  watchdog_armed = true;
+}
+static inline void watchdog_feed() {
+  WDOG1_WSR = 0x5555;
+  WDOG1_WSR = 0xAAAA;
+}
+
+// A full LittleFS format can exceed 128s worst-case (flash sector erase is
+// 400ms MAX) - the one legitimate loop-blocking op longer than the
+// watchdog. Feed from a timer for its duration only.
+static IntervalTimer wdog_format_feeder;
+static void watchdog_feed_isr() { watchdog_feed(); }  // ISR: stays in ITCM
+FLASHMEM static void watchdog_feed_during(void (*op)()) {
+  wdog_format_feeder.begin(watchdog_feed_isr, 1000000);  // 1s
+  op();
+  wdog_format_feeder.end();
+}
+#endif
+
+FLASHMEM void setup() {
+  delay(50);
+#if defined(__IMXRT1062__)
+  boot_srsr = SRC_SRSR;
+  SRC_SRSR = boot_srsr;  // w1c: next boot reports only its own cause
+#endif
+  Serial.begin(9600);
+
+  if (CrashReport) {
+    // stash the report so it can be appended to CRASH.LOG once the filesystem is up
+    crash_capture.print(CrashReport);
+    while (!Serial && millis() < 3000) ; // wait
+    Serial.println(crash_capture.buf);
+    delay(1500);
+  }
+
+  #if defined(ARDUINO_TEENSY41)
+  OC::Pinout_Detect();
+  #endif
+#if defined(__MK20DX256__)
+  NVIC_SET_PRIORITY(IRQ_PORTB, 0); // TR1 = 0 = PTB16
+#endif
+  SPI_init();
+  SERIAL_PRINTLN("* O&C BOOTING...");
+  SERIAL_PRINTLN("* %s", OC::Strings::VERSION);
+
+  OC::DEBUG::Init();
+  OC::DigitalInputs::Init();
+
+#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
+  if (DAC8568_Uses_SPI) {
+    // DAC8568 Vref does not turn on by default like DAC8565
+    // best to turn on Vref as early as possible for analog
+    // circuitry to settle
+    OC::DAC::DAC8568_Vref_enable();
+  }
+  if (ADC33131D_Uses_FlexIO) {
+    // ADC33131D wants calibration for Vref, takes ~1150 ms
+    OC::ADC::ADC33131D_Vref_calibrate();
+  } else {
+#endif
+    delay(400);
+#if defined(__IMXRT1062__) && defined(ARDUINO_TEENSY41)
+  }
+#endif
+
+  OC::calibration_load();
+  OC::SetFlipMode(OC::calibration_data.flipcontrols());
+
+#if defined(ARDUINO_TEENSY41)
+  Wire.begin();
+  Wire.setClock(100000);
+#endif
+
+  OC::ADC::Init(&OC::calibration_data.adc, OC::calibration_data.flipcontrols());
+  OC::ADC::Init_DMA();
+  OC::DAC::Init(&OC::calibration_data.dac, &OC::global_settings.autotune_calibration_data, OC::calibration_data.flipcontrols());
+
+  display::AdjustOffset(OC::calibration_data.display_offset);
+  display::SetFlipMode( OC::calibration_data.flipscreen() );
+  display::Init();
+
+  GRAPHICS_BEGIN_FRAME(true);
+  GRAPHICS_END_FRAME();
+
+  OC::ui.Init();
+  OC::ui.configure_encoders(OC::calibration_data.encoder_config());
+
+  SERIAL_PRINTLN("* CORE ISR @%luus", OC_CORE_TIMER_RATE);
+  io_frame.Reset();
+  CORE_timer.begin(CORE_timer_ISR, OC_CORE_TIMER_RATE);
+  CORE_timer.priority(OC_CORE_TIMER_PRIO);
+
+  // Wait until there's at least some ADC values read
+  delay(4);
+  uint32_t random_seed =
+      OC::ADC::raw_value(ADC_CHANNEL_1) * OC::ADC::raw_value(ADC_CHANNEL_2) +
+      OC::ADC::raw_value(ADC_CHANNEL_3) + OC::ADC::raw_value(ADC_CHANNEL_4);
+  randomSeed(random_seed);
+
+  SERIAL_PRINTLN("* UI ISR @%luus", OC_UI_TIMER_RATE);
+  UI_timer.begin(UI_timer_ISR, OC_UI_TIMER_RATE);
+  UI_timer.priority(OC_UI_TIMER_PRIO);
+
+#ifdef VHEMISPHERE_OUTPUT_RANGE
+  if (DAC_20Vpp || NorthernLightModular || !DAC8568_Uses_SPI) {
+    while (true) {
+      GRAPHICS_BEGIN_FRAME(true);
+      graphics.setPrintPos(0, 15); graphics.print("Unsupported hardware");
+      graphics.setPrintPos(0, 30); graphics.print("Use O_C T4.1 rev3");
+      GRAPHICS_END_FRAME();
+      delay(100);
+    }
+  }
+#endif
+
+  // first sign of life
+  GRAPHICS_BEGIN_FRAME(true);
+  graphics.setPrintPos(1, 28);
+  graphics.print("*Main Screen Turn On*");
+  GRAPHICS_END_FRAME();
+
+#if defined(ARDUINO_TEENSY41)
+  // Standard MIDI I/O on Serial8, only for Teensy 4.1
+  if (MIDI_Uses_Serial8) {
+    Serial8.begin(31250);
+    MIDI1.begin(MIDI_CHANNEL_OMNI);
+  }
+  // USB Host support for 4.1 only
+  thisUSB.begin();
+#endif
+
+#if defined(MULTIBOOT) && (MULTIBOOT == 0)
+  delay(100);
+  BootMenu(OC::ui.read_immediate(OC::CONTROL_BUTTON_Z));
+#endif
+
+  // --- more hardware init
+#if defined(ARDUINO_TEENSY41)
+  // this takes a couple seconds to timeout if no card
+  SDcard_Ready = SD.begin(BUILTIN_SDCARD);
+
+  if (I2S2_Audio_ADC && I2S2_Audio_DAC) {
+    OC::AudioIO::Init();
+  }
+#endif
+
+  // initialize LittleFS for config files
+  PhzConfig::Init();
+
+  // append any captured crash report to CRASH.LOG (rotate at 8KB)
+  if (crash_capture.len) {
+    File cl = PhzConfig::myfs.open("CRASH.LOG", FILE_READ);
+    const bool rotate = cl && cl.size() > 8192;
+    if (cl) cl.close();
+    if (rotate) {  // keep one generation of history instead of deleting
+      PhzConfig::myfs.remove("CRASH.OLD");
+      PhzConfig::myfs.rename("CRASH.LOG", "CRASH.OLD");
+    }
+    cl = PhzConfig::myfs.open("CRASH.LOG", FILE_WRITE);  // append
+    if (cl) {
+      cl.printf("--- boot @ %lu ms ---\n", millis());
+      cl.write((const uint8_t *)crash_capture.buf, crash_capture.len);
+      cl.close();
+      Serial.println("CrashReport appended to CRASH.LOG");
+    }
+  }
+
+  // Display loading splash screen and optional calibration
+  bool reset_settings = false;
+  ui_mode = OC::ui.Splashscreen(reset_settings, 0);
+
+  bool start_cal = false;
+  if (ui_mode == OC::UI_MODE_CALIBRATE) {
+    start_cal = true;
+    ui_mode = OC::UI_MODE_MENU;
+  }
+  OC::ui.set_screensaver_timeout(OC::calibration_data.screensaver_timeout);
+
+#ifdef VOR
+  VBiasManager *vbias_m = vbias_m->get();
+  vbias_m->SetState(VBiasManager::BI);
+#endif
+
+  // use default global config file in LFS
+  bool firstrun = !PhzConfig::load_config();
+#ifdef __IMXRT1062__
+  if (firstrun) {
+    // GLOBALS.CFG missing/corrupt: try the boot-time backup before the
+    // ConfirmReset flow gets a chance to threaten a factory wipe.
+    if (PhzConfig::load_config(PhzConfig::BACKUP_FILENAME)) {
+      Serial.println("CONFIG: GLOBALS.CFG bad; restored from GLOBALS.BAK");
+      PhzConfig::save_config();  // re-materialize the primary from memory
+      firstrun = false;
+    }
+  } else {
+    PhzConfig::backup_config();  // known-good primary: refresh the backup
+  }
+#endif
+
+  // initialize apps
+  OC::app_switcher.Init(reset_settings || firstrun);
+
+  // Welcome splash
+  OC::ui.Splashscreen(firstrun, 1);
+
+  if (start_cal)
+    OC::start_calibration();
+
+  OC::app_switcher.current_app()->DispatchAppEvent(OC::APP_EVENT_RESUME);
+
+#if defined(__IMXRT1062__)
+  // loop takes over feeding from here
+  watchdog_arm();
+  SERIAL_PRINTLN("* WDOG1 armed (128s, fed from loop)");
+#endif
+
+  SERIAL_PRINTLN("[End of setup()]");
+}
+
+// Virtual button click or encoder detent
+FLASHMEM __attribute__((noinline))
+static void RemoteControl(int sel) {
+  using namespace OC;
+  switch (sel) {
+    // short button press
+    case 'a': ui.InjectButton(CONTROL_BUTTON_A); break;
+    case 'b': ui.InjectButton(CONTROL_BUTTON_B); break;
+    case 'x': ui.InjectButton(CONTROL_BUTTON_X); break;
+    case 'y': ui.InjectButton(CONTROL_BUTTON_Y); break;
+    case 'z': ui.InjectButton(CONTROL_BUTTON_Z); break;
+    case 'l': ui.InjectButton(CONTROL_BUTTON_L); break;   // left encoder push
+    case 'r': ui.InjectButton(CONTROL_BUTTON_R); break;   // right encoder push
+
+    // COMBOS
+    case '^': // A + B to go UP one screen
+      ui.InjectButton(CONTROL_BUTTON_A, false, CONTROL_BUTTON_B);
+      break;
+    case 'v': // X + Y combo to go DOWN one screen
+      ui.InjectButton(CONTROL_BUTTON_X, false, CONTROL_BUTTON_Y);
+      break;
+    case '<': // A + X to go LEFT one screen
+      ui.InjectButton(CONTROL_BUTTON_A, false, CONTROL_BUTTON_X);
+      break;
+    case '>': // B + Y to go RIGHT one screen
+      ui.InjectButton(CONTROL_BUTTON_B, false, CONTROL_BUTTON_Y);
+      break;
+
+    // lol backslash won't be problematic at all, right?
+    case '\\': // A + Y diagonal
+    case '|': // as an alternative
+      ui.InjectButton(CONTROL_BUTTON_A, false, CONTROL_BUTTON_Y);
+      break;
+    case '/':  // B + X diagonal
+      ui.InjectButton(CONTROL_BUTTON_B, false, CONTROL_BUTTON_X);
+      break;
+    case '_': // both encoders
+      ui.InjectButton(CONTROL_BUTTON_L, false, CONTROL_BUTTON_R);
+      break;
+
+    // long-presses
+    case 'A': ui.InjectButton(CONTROL_BUTTON_A, true); break;
+    case 'B': ui.InjectButton(CONTROL_BUTTON_B, true); break;
+    case 'X': ui.InjectButton(CONTROL_BUTTON_X, true); break;
+    case 'Y': ui.InjectButton(CONTROL_BUTTON_Y, true); break;
+    case 'Z': ui.InjectButton(CONTROL_BUTTON_Z, true); break;
+    case 'L': ui.InjectButton(CONTROL_BUTTON_L, true); break;
+    case 'R': ui.InjectButton(CONTROL_BUTTON_R, true); break;
+    // encoder detent rotation
+    case '(': ui.InjectEncoder(CONTROL_ENCODER_L, -1); break;
+    case ')': ui.InjectEncoder(CONTROL_ENCODER_L,  1); break;
+    case '[': ui.InjectEncoder(CONTROL_ENCODER_R, -1); break;
+    case ']': ui.InjectEncoder(CONTROL_ENCODER_R,  1); break;
+    default: break;
+  }
+}
+
+FLASHMEM __attribute__((noinline))
+void SerialHandler() {
+  static size_t cap_idx = 0;
+  static elapsedMicros cap_send_time = 0;
+  static bool unlocked = false;
+
+  if (Serial && Serial.available() > 0) {
+    bool capreq = !unlocked;
+
+    if (unlocked) do {
+      static uint32_t cmd = 0;
+      char c = Serial.read();
+      cmd = (cmd << 8) | c;
+
+      // static uint8_t *cmd_bytes = (uint8_t*)&cmd;
+      // handle the top byte of a 4-byte command
+      // switch (cmd_bytes[0]) {
+      //   case 'O': // scope request
+      //     break;
+      //   default: break;
+      // }
+
+      // handle full 4-byte commands
+      switch (cmd) {
+        case FOURCCS("hey."):
+          Serial.println("Hello, person. Welcome to this place.");
+          continue;
+        case FOURCCS("F*ck"):
+          Serial.println("!! ERASING ALL FILES on LittleFS !!");
+          watchdog_feed_during([] { PhzConfig::eraseFiles(); });
+          break;
+        default:
+          break;
+      }
+
+      // immediate one-character handlers
+      switch (c) {
+        case 'z':
+          Serial.println("-=[ PEW PEW NERDS! ]=-");
+          Serial.println("Secret Menu Options:");
+          Serial.printf("'I' = Toggle App ISR [%s]\n", OC::CORE::app_isr_enabled ? "ON" : "OFF");
+          Serial.printf("'D' = Toggle Display Redraw [%s]\n", OC::CORE::display_update_enabled ? "ON" : "OFF");
+          Serial.printf("'L' = Toggle App Loop [%s]\n", OC::CORE::app_loop_enabled ? "ON" : "OFF");
+#if defined(__IMXRT1062__)
+#if defined(ARDUINO_TEENSY41)
+          Serial.println("'N' = print Midi Log");
+          Serial.println("'i' = scan all i2c addresses");
+#endif
+          Serial.println("'l' = list all files in flash (LittleFS)");
+          Serial.println("'s' = list all files on SD card");
+          Serial.println("'C' = clear/reset default Config file");
+          Serial.println("'F*ck' = format/erase all LittleFS files");
+          Serial.println("'?' = print contents of CRASH.LOG");
+          Serial.println("'~' + [abxyzlr<^>v] = simulate button");
+#endif
+          break;
+
+        case 'I':
+          OC::CORE::app_isr_enabled = !OC::CORE::app_isr_enabled;
+          Serial.printf("App ISR = %s\n", OC::CORE::app_isr_enabled ? "ON" : "OFF");
+          break;
+        case 'D':
+          OC::CORE::display_update_enabled = !OC::CORE::display_update_enabled;
+          Serial.printf("Display Redraw = %s\n", OC::CORE::display_update_enabled ? "ON" : "OFF");
+          break;
+        case 'L':
+          OC::CORE::app_loop_enabled = !OC::CORE::app_loop_enabled;
+          Serial.printf("App Loop = %s\n", OC::CORE::app_loop_enabled ? "ON" : "OFF");
+          break;
+
+#if defined(__IMXRT1062__)
+#if defined(ARDUINO_TEENSY41)
+        case 'N':
+          // MIDI monitor: dump the in/out event ring as one "N:..." line.
+          MidiLog::PrintLog();
+          break;
+        case 'i':
+          ScanI2C();
+          break;
+#endif
+        case 'C':
+          Serial.println("Resetting Config File!!");
+          PhzConfig::clear_config();
+          PhzConfig::save_config();
+        case 'l':
+          Serial.println(" -=- LittleFS -=- ");
+          PhzConfig::listFiles();
+          break;
+        case 's':
+          Serial.println(" -=- SD Card -=- ");
+          PhzConfig::listFiles(SD);
+          break;
+        case '?': {
+          // dump the CrashReport log
+          File cl = PhzConfig::myfs.open("CRASH.LOG", FILE_READ);
+          if (cl) {
+            Serial.println("*** CRASH.LOG ***");
+            while(cl.available()) {
+              c = cl.read();
+              Serial.print(c);
+            }
+            cl.close();
+          } else
+            Serial.println("*** no CRASH.LOG found ***");
+          break;
+        }
+#endif
+
+        case '~': {
+          // Remote control: the next byte selects a button/encoder to inject.
+          uint32_t t0 = millis();
+          while (!Serial.available() && (millis() - t0) < 5) { /* await selector */ }
+          if (Serial.available()) RemoteControl(Serial.read());
+          break;
+        }
+
+        case 'p': // preset load
+        case 'P': // Preset Save
+        {
+          // next byte = slot + 33.
+          uint32_t t0 = millis();
+          while (!Serial.available() && (millis() - t0) < 5) { /* await slot */ }
+          if (Serial.available())
+            OC::ui.Inject(
+              UI::EVENT_MISC,
+              c == 'p' ? UI::MISC_PRESET_LOAD : UI::MISC_PRESET_SAVE,
+              Serial.read() - 33,
+              0
+            );
+
+          break;
+        }
+        default:
+          capreq = true;
+          break;
+      }
+    } while (Serial.available() > 0); // todo: yield after a limit
+    /* not unlocked yet */
+    else {
+      static constexpr uint32_t PEW = FOURCCS("Pew!");
+      static uint32_t unlock_shift = 0;
+      unlock_shift = (unlock_shift << 8) | (uint8_t)Serial.read();
+      if (unlock_shift == PEW) {
+        unlocked = true;
+        Serial.println("Pew!");
+      }
+    };
+
+    if (capreq) {
+      display::frame_buffer.capture_request();
+      cap_idx = 0;
+    }
+  }
+
+  // check for frame buffer to have capture data ready
+  const uint8_t *capture_data = display::frame_buffer.captured();
+  if (capture_data && cap_send_time > 950) {
+    cap_send_time = 0;
+    capture_data += cap_idx; // start where we left off
+
+    // limit to n bytes every 950 micros
+    const size_t chunk_size = 32;
+    for (size_t i=0; i < chunk_size; i++) {
+      uint8_t n = *capture_data++;
+      if (n < 16) Serial.print("0");
+      Serial.print(n, HEX);
+
+      if (++cap_idx >= display::frame_buffer.kFrameSize) {
+        // we're done sending this one
+        Serial.println();
+        Serial.flush();
+        cap_idx = 0;
+        display::frame_buffer.capture_retire();
+        break;
+      }
+    }
+  }
+
+} // SerialHandler
+
+void Redraw() {
+  using namespace OC;
+  static uint32_t menu_draw_count = 0;
+
+  GRAPHICS_BEGIN_FRAME(false); // Don't busy wait
+  if (UI_MODE_APP_SETTINGS == ui_mode) {
+    // Only draw the App menu here...
+    // Handle events and process state changes elsewhere.
+    ui.AppSettings(true);
+
+  } else { // if (UI_MODE_MENU == ui_mode) {
+    OC_DEBUG_RESET_CYCLES(menu_draw_count, 512, DEBUG::MENU_draw_cycles);
+    OC_DEBUG_PROFILE_SCOPE(DEBUG::MENU_draw_cycles);
+    app_switcher.current_app()->Draw(ui_mode);
+    ++menu_draw_count;
+  }
+  GRAPHICS_END_FRAME();
+}
+
+/*  ---------    main loop  --------  */
+FLASHMEM __attribute__((noinline)) void loop() {
+  using namespace OC;
+  CORE::app_isr_enabled = true;
+  CORE::display_update_enabled = true;
+  CORE::app_loop_enabled = true;
+  uint32_t menu_draw_count = 0;
+  uint32_t last_redraw_time = 0;
+
+  while (true) {
+#if defined(__IMXRT1062__)
+    watchdog_feed();
+#endif
+#if defined(ARDUINO_TEENSY41)
+    thisUSB.Task();
+#endif
+
+    // Refresh display
+    if (MENU_REDRAW && CORE::display_update_enabled) {
+      Redraw();
+      MENU_REDRAW = 0;
+      last_redraw_time = ui.ticks();
+    }
+
+    // Run current app
+    if (CORE::app_loop_enabled)
+      app_switcher.current_app()->DispatchLoop();
+
+    // Take care of queued tasks
+    OC::CORE::FlushTasks();
+
+    // UI events
+    if (UI_MODE_APP_SETTINGS == ui_mode) {
+      if (!ui.AppSettings(false)) {
+        // exit menu, resume app
+        ui_mode = UI_MODE_MENU;
+      }
+    } else {
+      UiMode mode = ui.DispatchEvents(app_switcher.current_slot());
+
+      // State transition for app
+      if (mode != ui_mode) {
+        if (UI_MODE_SCREENSAVER == mode)
+          app_switcher.current_app()->DispatchAppEvent(APP_EVENT_SCREENSAVER_ON);
+        else if (UI_MODE_SCREENSAVER == ui_mode)
+          app_switcher.current_app()->DispatchAppEvent(APP_EVENT_SCREENSAVER_OFF);
+        else if (UI_MODE_APP_SETTINGS == mode)
+          app_switcher.current_app()->DispatchAppEvent(APP_EVENT_SUSPEND);
+
+        ui_mode = mode;
+      }
+    }
+
+    if (ui.ticks() - last_redraw_time > REDRAW_TIMEOUT_MS)
+      MENU_REDRAW = 1;
+
+#ifdef MTP_INTERFACE
+    // handle MTP Disk requests
+    MTP.loop();
+#endif
+
+    if (Serial) SerialHandler();
+
+  } // while true
+}

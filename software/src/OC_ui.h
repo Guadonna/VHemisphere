@@ -1,0 +1,233 @@
+#ifndef OC_UI_H_
+#define OC_UI_H_
+
+#include <stdint.h>
+#include "OC_config.h"
+#include "OC_options.h"
+#include "OC_debug.h"
+#include "src/UI/ui_button.h"
+#include "src/UI/ui_encoder.h"
+#include "src/UI/ui_event_queue.h"
+
+struct RuntimeSlot;
+
+namespace OC {
+
+enum EncoderConfig : uint32_t;
+class AppBase;
+
+// UI::Event::control is uint16_t, but we only have 6 controls anyway.
+// So we can helpfully make things into bitmasks, which seems useful.
+enum UiControl : uint16_t {
+  CONTROL_BUTTON_UP   = 1 << 0,
+  CONTROL_BUTTON_DOWN = 1 << 1,
+  /* Reverse the left and right buttons if Hemisphere Suite is installed on the left-hand
+   * side of a Northern Light 2OC 4U module.
+   */
+#ifdef NORTHERNLIGHT_2OC_LEFTSIDE
+  CONTROL_BUTTON_L    = 1 << 3,
+  CONTROL_BUTTON_R    = 1 << 2,
+#else
+  CONTROL_BUTTON_L    = 1 << 2,
+  CONTROL_BUTTON_R    = 1 << 3,
+#endif
+
+  // not all of these are present on all hardware...
+  // but it probably doesn't hurt to include in the enum
+  CONTROL_BUTTON_M     = 1 << 4,
+  CONTROL_BUTTON_UP2   = 1 << 5,
+  CONTROL_BUTTON_DOWN2 = 1 << 6,
+
+  CONTROL_ENCODER_L   = 1 << 8,
+  CONTROL_ENCODER_R   = 1 << 9,
+
+#if defined(VOR)
+  CONTROL_BUTTON_LAST = 5,
+#elif defined(ARDUINO_TEENSY41)
+  CONTROL_BUTTON_LAST = 7,
+#else
+  CONTROL_BUTTON_LAST = 4,
+#endif
+
+  // aliases for T41
+  CONTROL_BUTTON_A = CONTROL_BUTTON_UP,
+  CONTROL_BUTTON_B = CONTROL_BUTTON_DOWN,
+  CONTROL_BUTTON_X = CONTROL_BUTTON_UP2,
+  CONTROL_BUTTON_Y = CONTROL_BUTTON_DOWN2,
+  CONTROL_BUTTON_Z = CONTROL_BUTTON_M,
+};
+
+static inline uint16_t control_mask(unsigned i) {
+  return 1 << i;
+}
+
+enum UiMode {
+  UI_MODE_SCREENSAVER,
+  UI_MODE_MENU,
+  UI_MODE_APP_SETTINGS,
+  UI_MODE_CALIBRATE
+};
+
+class Ui {
+public:
+  static const size_t kEventQueueDepth = 64;
+  static const uint32_t kLongPressTicks = 500;
+
+  Ui() { }
+
+  void Init();
+
+  UiMode Splashscreen(bool &reset_settings, uint8_t phase = 0);
+  bool ConfirmReset();
+  void DebugStats();
+  bool AppSettings(bool drawmenu);
+  UiMode DispatchEvents(const RuntimeSlot &appslot);
+
+  void Inject(UI::EventType type, uint16_t control, int16_t value, uint16_t held = 0);
+  void InjectButton(uint16_t control, bool longpress = false, uint16_t mask = 0) {
+    Inject(UI::EVENT_BUTTON_DOWN, control, 0, mask);
+    if (longpress) {
+      Inject(UI::EVENT_BUTTON_LONG_PRESS, control, 0, mask);
+      Inject(UI::EVENT_BUTTON_LONG_RELEASE, control, 0, mask);
+    } else {
+      Inject(UI::EVENT_BUTTON_RELEASE, control, 0, mask);
+    }
+  }
+  void InjectEncoder(uint16_t control, int16_t increment, uint16_t mask = 0) {
+    Inject(UI::EVENT_ENCODER, control, increment, mask);
+  }
+
+  void Poll();
+  void Poke();
+  void preempt_screensaver(bool v);
+
+  inline bool read_immediate(UiControl control) const {
+    return button_state_ & control;
+  }
+  inline bool read_deliberate(UiControl control) const {
+    return (button_state_ & control) && !awaiting_release(control);
+  }
+  // True while `control` has not yet been released since the ignore guard was armed.
+  inline bool awaiting_release(UiControl control) const {
+    return chord_hold_ & control;
+  }
+
+  inline void encoders_enable_acceleration(bool enable) {
+    encoder_left_.enable_acceleration(enable);
+    encoder_right_.enable_acceleration(enable);
+  }
+
+  inline void encoder_enable_acceleration(UiControl encoder, bool enable) {
+    switch (encoder) {
+    case CONTROL_ENCODER_L:
+      encoder_left_.enable_acceleration(enable);
+      break;
+    case CONTROL_ENCODER_R:
+      encoder_right_.enable_acceleration(enable);
+      break;
+    default: break;
+    }
+  }
+
+  void configure_encoders(EncoderConfig encoder_config);
+
+  inline uint32_t idle_time() const {
+    return event_queue_.idle_time();
+  }
+
+  inline uint32_t ticks() const {
+    return ticks_;
+  }
+
+  inline size_t get_queue_size() const {
+    return event_queue_.available();
+  }
+
+  inline void IgnoreUntilRelease(uint16_t buttons) {
+    const uint16_t down = button_down_ | button_state_;
+    chord_hold_    |= buttons &  down;
+    chord_release_ |= buttons & ~down;
+  }
+  inline void SetButtonIgnoreMask() {
+    IgnoreUntilRelease(button_down_ | button_state_);
+  }
+
+  inline void IgnoreButton(UiControl control) {
+    IgnoreUntilRelease(control);
+  }
+
+  uint32_t screensaver_timeout() const {
+    return screensaver_timeout_;
+  }
+
+  void set_screensaver_timeout(uint32_t seconds);
+
+  void JumpToMenu() {
+    jump_to_menu_ = true;
+  }
+
+private:
+
+  uint32_t ticks_ = 0;
+  uint32_t screensaver_timeout_ = 120;
+
+  UI::Button buttons_[CONTROL_BUTTON_LAST];
+  uint32_t button_press_time_[CONTROL_BUTTON_LAST];
+  uint16_t button_state_ = 0;
+  uint16_t button_down_ = 0;
+  uint16_t chord_hold_ = 0;
+  uint16_t chord_release_ = 0;
+  bool screensaver_ = 0;
+  bool preempt_screensaver_ = 0;
+  bool jump_to_menu_ = 0;
+
+  /* Reverse the left and right encoders if Hemisphere Suite is installed on the left-hand
+   * side of a Northern Light 2OC 4U module.
+   */
+#ifdef NORTHERNLIGHT_2OC_LEFTSIDE
+  UI::Encoder<encR1, encR2> encoder_left_;
+  UI::Encoder<encL1, encL2> encoder_right_;
+#else
+  UI::Encoder<encR1, encR2> encoder_right_;
+  UI::Encoder<encL1, encL2> encoder_left_;
+#endif
+
+  UI::EventQueue<kEventQueueDepth> event_queue_;
+
+  inline void PushEvent(UI::EventType t, uint16_t c, int16_t v, uint16_t m) {
+#ifdef OC_DEBUG_UI
+    if (!event_queue_.writable())
+      ++DEBUG::UI_queue_overflow;
+    ++DEBUG::UI_event_count;
+#endif
+    event_queue_.PushEvent(t, c, v, m);
+  }
+
+  bool IgnoreEvent(const UI::Event &event) {
+    if (chord_hold_ & event.control)
+      return true;
+
+    if (chord_release_ & event.control) {
+      chord_release_ &= ~event.control;
+      if (UI::EVENT_BUTTON_RELEASE == event.type ||
+          UI::EVENT_BUTTON_LONG_RELEASE == event.type)
+        return true;
+    }
+
+    if (screensaver_) {
+      screensaver_ = false;
+      SetButtonIgnoreMask();
+      return true;
+    }
+
+    return false;
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Ui);
+};
+
+extern Ui ui;
+
+}; // namespace OC
+
+#endif // OC_UI_H_
