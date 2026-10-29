@@ -31,3 +31,8 @@ _Attention!_ As of v2.0, the global UI gestures have changed!
 | **Cycle Internal Clock state**     | Long-press LEFT encoder  | Stop -> Arm _(i.e. play on next input trigger)_ -> Start |
 | **Open [Hemisphere Config menu](Hemisphere-Config)** | Long-press DOWN button. Scroll pages with LEFT encoder, move cursor with RIGHT encoder | Load/save presets; adjust trigger length; select screensaver and cursor mode; toggle auto-MIDI out; trigger and CV input mapping; quantizer settings; applet filtering |
 | **AuxButton**  | _**After pushing encoder to highlight a parameter for editing**_, press the corresponding select button (UP or DOWN) | This gesture is only enabled in certain applets for secondary functions, typically indicated with a dotted cursor line. Use it to mute/unmute steps in DivSeq, SequenceX, Seq32, etc.; re-randomize sequences in Shredder; Toggle additional CV mapping in DuoTET; and directly edit the current [Quantizer engine](Hemisphere-Quantizer-Setup) |
+
+## Setup/About
+
+On the main Setup/About screen, hold the right encoder button to return to the
+app menu. This shortcut does not replace the calibration wizard's step controls.

@@ -1,4 +1,4 @@
-# Development status: v0.2.2
+# Development status: v0.2.3
 
 See README.md for the implemented behavior and verification limits.
 The release is software-validated, not hardware-validated.
@@ -29,3 +29,8 @@ are displayed before final clipping; the output monitor applies the limiter.
 EnsOscKey uses voltageToCode for both output and display (0.05..0.95 V).
 Host tests run the actual Voltage and AttenOff applet classes with simulated I/O
 and cover encoder endpoints, labels, preset restoration and bipolar input.
+
+Version 0.2.3 restores right-encoder long-press to leave the Setup/About
+landing page. Its release is consumed to avoid triggering Reset or the app
+picker. Calibration step handling and the global UP + right-encoder shortcut
+are unchanged.

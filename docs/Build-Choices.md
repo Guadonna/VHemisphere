@@ -18,5 +18,5 @@ scripts/test-host.sh
 pio run -d software -e VHemisphere -j 4
 ```
 
-The firmware image is `software/.pio/build/VHemisphere/VHemisphere-v0.2.2-Teensy40.hex`.
+The firmware image is `software/.pio/build/VHemisphere/VHemisphere-v0.2.3-Teensy40.hex`.
 See [Installation](Installation) to load it.

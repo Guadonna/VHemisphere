@@ -5,7 +5,7 @@ nav_order: 2
 # Install on Teensy 4.0
 
 1. Back up the module's calibration and presets using the installed firmware.
-2. Download `VHemisphere-v0.2.2-Teensy40.hex` and `SHA256SUMS` from
+2. Download `VHemisphere-v0.2.3-Teensy40.hex` and `SHA256SUMS` from
    [VHemisphere releases](https://github.com/Guadonna/VHemisphere/releases).
 3. Open the HEX in [Teensy Loader](https://www.pjrc.com/teensy/loader.html).
    Follow the module manufacturer's USB and power connection instructions.

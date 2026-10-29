@@ -482,6 +482,13 @@ public:
 
     void HandleUiEvent(const UI::Event &event) {
       if (!calibration_mode) {
+        if (event.control == OC::CONTROL_BUTTON_R && event.type == UI::EVENT_BUTTON_LONG_PRESS) {
+          // Consume the release as well: it must not activate Reset or the
+          // newly opened app picker. Calibration retains its step controls.
+          OC::ui.SetButtonIgnoreMask();
+          OC::ui.JumpToMenu();
+          return;
+        }
         if (event.control == OC::CONTROL_ENCODER_L) {
           reflash = (event.value > 0);
         }

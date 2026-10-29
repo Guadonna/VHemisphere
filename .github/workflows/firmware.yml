@@ -17,4 +17,4 @@ jobs:
         with:
           name: VHemisphere-Teensy40
           include-hidden-files: true
-          path: software/.pio/build/VHemisphere/VHemisphere-v0.2.2-Teensy40.hex
+          path: software/.pio/build/VHemisphere/VHemisphere-v0.2.3-Teensy40.hex

@@ -5,6 +5,8 @@ layout: default
 
 Displays the firmware version, Teensy 4.0 target and fixed output range.
 Rotate the left encoder to choose Calibrate or Reflash, then press to enter.
+Hold the right encoder button on this screen to return to the app menu.
+During calibration the right button advances through calibration steps.
 
 ## Calibration routine
 
