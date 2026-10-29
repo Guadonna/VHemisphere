@@ -10,3 +10,7 @@ ${CXX:-g++} -std=c++17 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-
 ${CXX:-g++} -std=c++17 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=undefined \
   software/test/vhemisphere/applet_test.cpp -o "$test_binary"
 "$test_binary"
+
+${CXX:-g++} -std=c++17 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=undefined \
+  -Isoftware/test/vhemisphere/stubs software/test/vhemisphere/navigation_test.cpp -o "$test_binary"
+"$test_binary"

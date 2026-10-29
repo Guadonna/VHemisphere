@@ -88,6 +88,9 @@ public:
   void EditIOSettings();
   void DispatchLoop();
 
+  // Calibration can reserve the encoder hold for its own step navigation.
+  virtual bool allow_long_press_exit() const { return true; }
+
   // Main implementation interface for derived classes
   virtual void Init() = 0;
   virtual size_t appdata_storage_size() const = 0;

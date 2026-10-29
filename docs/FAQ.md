@@ -11,8 +11,7 @@ nav_order: 2
 
 ## Q: How do I switch Apps?
 
-A: In v2.0+, hold UP and press the Right Encoder to find the main App Menu. See the [UI Gestures](Hemisphere-Gestures) page for more info.
-_(in v1.x firmwares, Long-press the Right Encoder for main menu.)_
+A: Hold the right encoder button to open the main app menu. UP + right encoder also works. See the [UI Gestures](Hemisphere-Gestures) page for more info.
 
 ## Q: Where are all the Applets?
 

@@ -34,6 +34,8 @@ OC_APP_CLASS(AppSettings, TWOCCS("SE"), "Setup/About", "Settings"),
 public:
   OC_APP_INTERFACE_DECLARE(AppSettings, 0);
 
+  bool allow_long_press_exit() const override { return !calibration_mode; }
+
   bool reflash = false;
   bool boot_menu = false;
   bool calibration_mode = false;
@@ -482,13 +484,6 @@ public:
 
     void HandleUiEvent(const UI::Event &event) {
       if (!calibration_mode) {
-        if (event.control == OC::CONTROL_BUTTON_R && event.type == UI::EVENT_BUTTON_LONG_PRESS) {
-          // Consume the release as well: it must not activate Reset or the
-          // newly opened app picker. Calibration retains its step controls.
-          OC::ui.SetButtonIgnoreMask();
-          OC::ui.JumpToMenu();
-          return;
-        }
         if (event.control == OC::CONTROL_ENCODER_L) {
           reflash = (event.value > 0);
         }

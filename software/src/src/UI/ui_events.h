@@ -67,11 +67,11 @@ struct Event {
   Event& operator=(const Event&) = default;
   Event& operator=(Event&&)      = default;
 
-  const bool IsEncoder() const { return type == EVENT_ENCODER; }
-  const bool IsPress() const { return type == EVENT_BUTTON_DOWN; }
-  const bool IsRelease() const { return type == EVENT_BUTTON_RELEASE; }
-  const bool IsLongPress() const { return type == EVENT_BUTTON_LONG_PRESS; }
-  const bool IsLongRelease() const { return type == EVENT_BUTTON_LONG_RELEASE; }
+  bool IsEncoder() const { return type == EVENT_ENCODER; }
+  bool IsPress() const { return type == EVENT_BUTTON_DOWN; }
+  bool IsRelease() const { return type == EVENT_BUTTON_RELEASE; }
+  bool IsLongPress() const { return type == EVENT_BUTTON_LONG_PRESS; }
+  bool IsLongRelease() const { return type == EVENT_BUTTON_LONG_RELEASE; }
 };
 
 }; // namespace UI

@@ -11,11 +11,9 @@ Certain applet (or parameter editing) contexts may override the default behaviou
 
 ## Global
 
-_Attention!_ As of v2.0, the global UI gestures have changed!
-
 | Action    | Gesture    |   Notes   |
 | --------- |:----------:|:---------:|
-| **Return to main menu** | Hold UP and press RIGHT Encoder | Execution continues in the background. |
+| **Return to main menu** | Hold RIGHT encoder, or hold UP and press RIGHT encoder | Available in apps and their settings overlays. Execution continues in the background. Calibration retains its own navigation. |
 | **Open IO Settings** | Hold UP and press LEFT Encoder | Used to configure settings for current App.<br>Press UP again to invoke screensaver. |
 | **[Save Global Settings to EEPROM](Saving-State)** | Long-press RIGHT encoder while on main menu | This includes the currently selected App, user scales, saved sequence patterns, etc. Use [Presets](Hemisphere-Presets) instead to store Applet settings inside Hemispheres |
 
@@ -32,7 +30,12 @@ _Attention!_ As of v2.0, the global UI gestures have changed!
 | **Open [Hemisphere Config menu](Hemisphere-Config)** | Long-press DOWN button. Scroll pages with LEFT encoder, move cursor with RIGHT encoder | Load/save presets; adjust trigger length; select screensaver and cursor mode; toggle auto-MIDI out; trigger and CV input mapping; quantizer settings; applet filtering |
 | **AuxButton**  | _**After pushing encoder to highlight a parameter for editing**_, press the corresponding select button (UP or DOWN) | This gesture is only enabled in certain applets for secondary functions, typically indicated with a dotted cursor line. Use it to mute/unmute steps in DivSeq, SequenceX, Seq32, etc.; re-randomize sequences in Shredder; Toggle additional CV mapping in DuoTET; and directly edit the current [Quantizer engine](Hemisphere-Quantizer-Setup) |
 
-## Setup/About
+## Global return gesture
 
-On the main Setup/About screen, hold the right encoder button to return to the
-app menu. This shortcut does not replace the calibration wizard's step controls.
+Hold the right encoder button to open the app menu from Hemisphere, Scale
+Editor, Waveform Editor, Backup, Setup/About, or an I/O settings overlay.
+This also works if a Hemisphere popup consumed the initial press. Releasing the
+button will not immediately select an app. Short presses retain their actions.
+
+In the app menu, holding the right encoder still saves global settings.
+Calibration retains its step controls; finish through Save/Cancel to leave it.

@@ -1,4 +1,4 @@
-# Development status: v0.2.3
+# Development status: v0.2.4
 
 See README.md for the implemented behavior and verification limits.
 The release is software-validated, not hardware-validated.
@@ -34,3 +34,10 @@ Version 0.2.3 restores right-encoder long-press to leave the Setup/About
 landing page. Its release is consumed to avoid triggering Reset or the app
 picker. Calibration step handling and the global UP + right-encoder shortcut
 are unchanged.
+
+Version 0.2.4 handles right-encoder hold in the shared UI dispatcher, before
+application-specific ignore masks or I/O overlays can swallow it. The right
+button release is explicitly consumed, including a release already in the queue.
+Setup opts out only during calibration; the app picker retains hold-to-save.
+Duplicate per-app exit handlers are removed. The host navigation harness runs
+the production dispatcher with simulated app and hardware boundaries.

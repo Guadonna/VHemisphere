@@ -1772,7 +1772,6 @@ void AppHemisphere::HandleButtonEvent(const UI::Event &event) {
 
         case UI::EVENT_BUTTON_LONG_RELEASE:
             if (event.control == OC::CONTROL_BUTTON_L) ToggleClockRun();
-            if (event.control == OC::CONTROL_BUTTON_R) OC::ui.JumpToMenu();
             break;
 
       default: break;
