@@ -13,14 +13,7 @@
 // -NJM
 
 // Reference Constants
-#define ONE_OCTAVE (12 << 7)
-#define PULSE_VOLTAGE HS::octave_max
-#define HEMISPHERE_MAX_CV (HS::octave_max * ONE_OCTAVE)
-#define HEMISPHERE_MIN_CV (-OC::DAC::kOctaveZero * ONE_OCTAVE*(1+DAC_20Vpp))
-#define HEMISPHERE_CENTER_CV ((HEMISPHERE_MAX_CV-HEMISPHERE_MIN_CV)/2)
-#define HEMISPHERE_3V_CV (3 * ONE_OCTAVE)
-#define HEMISPHERE_CENTER_INPUT_CV (NorthernLightModular*HEMISPHERE_MAX_CV/2)
-#define HEMISPHERE_MAX_INPUT_CV (6*ONE_OCTAVE + NorthernLightModular*(4*ONE_OCTAVE)) // 6V or 10V
+#include "HSVoltage.h"
 #define HEMISPHERE_CENTER_DETENT 80
 #define HEMISPHERE_CLOCK_TICKS 17 // one millisecond
 #define HEMISPHERE_CURSOR_TICKS 5000
@@ -322,6 +315,7 @@ void gfxPrint(const char *str);
 void gfxPrint(int num);
 void gfxPrint(int x_adv, int num);
 void gfxPrintVoltage(int cv);
+void gfxPrintOutputVoltage(int cv, bool clip = true, bool compact = false);
 void gfxPrintFreqFromPitch(int16_t pitch);
 void gfxPrintIcon(const uint8_t *data, int16_t w = 8);
 void gfxPrint(const HS::DigitalInputMap &map);

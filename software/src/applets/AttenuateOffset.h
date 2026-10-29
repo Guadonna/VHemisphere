@@ -131,11 +131,7 @@ private:
             gfxPrint(0, 15 + (ch * 20), OutputLabel(ch));
             int cv = offset[ch] * ATTENOFF_INCREMENTS;
             gfxPrint(" ");
-            #ifdef VHEMISPHERE_OUTPUT_RANGE
-            gfxPrintVoltage(VHemisphere::output_pitch(cv));
-#else
-            gfxPrintVoltage(cv);
-#endif
+            gfxPrintOutputVoltage(cv, false);
             gfxPrint(16, 25 + (ch * 20), Proportion(level[ch], 63, 100));
             gfxPrint("%");
         }

@@ -1,4 +1,6 @@
 #include "../../src/VHemisphereOutput.h"
+#include "../../src/VHemisphereDisplay.h"
+#include <cstring>
 #include "../../src/src/extern/braids_quantizer.h"
 #include <cassert>
 #include <climits>
@@ -25,6 +27,25 @@ int main() {
     assert(output_pitch(p) == -output_pitch(-p));
     assert(millivolts(p) >= -1000 && millivolts(p) <= 1000);
   }
+  char text[24];
+  struct DisplayCase { int pitch; const char *expected; };
+  for (const auto c : {DisplayCase{-7680, "-1.00V"}, {-4608, "-0.60V"},
+         {-3840, "-0.50V"}, {-128, "-0.02V"}, {0, "+0.00V"},
+         {128, "+0.02V"}, {3840, "+0.50V"}, {4608, "+0.60V"},
+         {7680, "+1.00V"}, {INT_MIN, "-1.00V"}, {INT_MAX, "+1.00V"}}) {
+    format_voltage(text, sizeof(text), c.pitch);
+    assert(std::strcmp(text, c.expected) == 0);
+  }
+  // Parameter contributions are not silently clipped; final output meters are.
+  format_voltage(text, sizeof(text), 8128, false);
+  assert(std::strcmp(text, "+1.06V") == 0);
+  // EnsOscKey's codes are quarter-volt centers: 0.25, 0.75, ... 4.75 internally.
+  for (int selection = 1; selection <= 10; ++selection) {
+    const int code = (2 * selection - 1) * 384;
+    assert(centivolts(code) == selection * 10 - 5);
+  }
+  format_voltage(text, sizeof(text), 384, false, true);
+  assert(std::strcmp(text, "0.05") == 0);
   // Traverse the exact wizard state helper used on-device: 4 channels x 3 points.
   {
     constexpr int channels = 4;

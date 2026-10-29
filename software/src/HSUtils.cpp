@@ -1,3 +1,4 @@
+#include "VHemisphereDisplay.h"
 #include <Arduino.h>
 #include "HSClockManager.h"
 #include "OC_core.h"
@@ -646,6 +647,17 @@ void gfxPrintVoltage(int cv) {
     if (dv < 10) gfxPrint("0");
     gfxPrint(dv);
     gfxPrint("V");
+}
+
+// Output values have their own conversion; input meters keep gfxPrintVoltage.
+void gfxPrintOutputVoltage(int cv, bool clip, bool compact) {
+#ifdef VHEMISPHERE_OUTPUT_RANGE
+    char text[24];
+    VHemisphere::format_voltage(text, sizeof(text), cv, clip, compact);
+    gfxPrint(text);
+#else
+    gfxPrintVoltage(cv);
+#endif
 }
 
 void gfxPrintFreqFromPitch(int16_t pitch) {

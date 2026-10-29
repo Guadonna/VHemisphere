@@ -802,9 +802,9 @@ public:
           const int other_x = x ? 0 : 64;
           gfxPrint(other_x, y+10, HS::frame.output_gate[out_ch] ? "Gate 0/1V" : "Out +/-1V");
           gfxPos(other_x, y+20);
-          gfxPrintVoltage(HS::frame.output_gate[out_ch]
-            ? (HS::frame.outputs[out_ch].get_target() ? ONE_OCTAVE : 0)
-            : VHemisphere::output_pitch(HS::frame.ViewOut(out_ch)));
+          gfxPrintOutputVoltage(HS::frame.output_gate[out_ch]
+            ? (HS::frame.outputs[out_ch].get_target() ? VHemisphere::input_limit : 0)
+            : HS::frame.ViewOut(out_ch));
 #endif
         }
       } else {

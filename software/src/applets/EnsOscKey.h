@@ -359,17 +359,17 @@ private:
         gfxPrint(56, 27, abs(octave+octaveCv));
 
         // Draw Voltage Selection Values
-        gfxPrint(0, 40, "I:");
-        gfxPos(14, 40); graphics.printf("%d.%d", min(voltage_maj, 5)/5, (min(voltage_maj, 5)%5)*2);
+        gfxPrint(0, 40, "I");
+        gfxPos(8, 40); gfxPrintOutputVoltage(voltageToCode(voltage_maj), false, true);
 
-        gfxPrint(30, 40, "i:");
-        gfxPos(44, 40); graphics.printf("%d.%d", min(voltage_min, 5)/5, (min(voltage_min, 5)%5)*2);
+        gfxPrint(32, 40, "i");
+        gfxPos(40, 40); gfxPrintOutputVoltage(voltageToCode(voltage_min), false, true);
 
-        gfxPrint(0, 52, "o:");
-        gfxPos(14, 52); graphics.printf("%d.%d", min(voltage_dim, 5)/5, (min(voltage_dim, 5)%5)*2);
+        gfxPrint(0, 52, "o");
+        gfxPos(8, 52); gfxPrintOutputVoltage(voltageToCode(voltage_dim), false, true);
 
-        gfxPrint(30, 52, "x:");
-        gfxPos(44, 52); graphics.printf("%d.%d", min(voltage_no_match, 5)/5, (min(voltage_no_match, 5)%5)*2);
+        gfxPrint(32, 52, "x");
+        gfxPos(40, 52); gfxPrintOutputVoltage(voltageToCode(voltage_no_match), false, true);
 
         // Draw cursor
         if (cursor == 0) {
@@ -379,13 +379,13 @@ private:
         } else if (cursor == 2) {
             gfxCursor(49, 35, 28);
         } else if (cursor == 3) {
-           gfxCursor(14, 48, 14);
+           gfxCursor(8, 48, 24);
         } else if (cursor == 4) {
-            gfxCursor(44, 48, 14);
+            gfxCursor(40, 48, 24);
         } else if (cursor == 5) {
-            gfxCursor(14, 60, 14);
+            gfxCursor(8, 60, 24);
         } else if (cursor == 6) {
-            gfxCursor(44, 60, 14);
+            gfxCursor(40, 60, 24);
         } 
     }
 };

@@ -1223,22 +1223,14 @@ private:
             gfxIcon(0, y, OFFSET_ICON);
             if (cursor == EnvSeqCursor::STEP_PARAM) gfxSpicyCursor(0, 63, 10, step_param_names[step_param_cursor]);
             gfxPos(10, y);
-            #ifdef VHEMISPHERE_OUTPUT_RANGE
-            gfxPrintVoltage(VHemisphere::output_pitch(s.offset * OFFSET_SCALE_INCREMENT));
-#else
-            gfxPrintVoltage(s.offset * OFFSET_SCALE_INCREMENT);
-#endif
+            gfxPrintOutputVoltage(s.offset * OFFSET_SCALE_INCREMENT, false);
             if (cursor == EnvSeqCursor::STEP_PARAM_VALUE) gfxSpicyCursor(10, 63, 53, step_param_names[step_param_cursor]);
             break;
         case StepParamCursor::STEP_PARAM_AMP:
             gfxIcon(0, y, RANGE_ICON);
             if (cursor == EnvSeqCursor::STEP_PARAM) gfxSpicyCursor(0, 63, 10, step_param_names[step_param_cursor]);
             gfxPos(10, y);
-            #ifdef VHEMISPHERE_OUTPUT_RANGE
-            gfxPrintVoltage(VHemisphere::output_pitch(s.amp * OFFSET_SCALE_INCREMENT));
-#else
-            gfxPrintVoltage(s.amp * OFFSET_SCALE_INCREMENT);
-#endif
+            gfxPrintOutputVoltage(s.amp * OFFSET_SCALE_INCREMENT, false);
             if (cursor == EnvSeqCursor::STEP_PARAM_VALUE) gfxSpicyCursor(10, 63, 53, step_param_names[step_param_cursor]);
             break;
         case StepParamCursor::STEP_PARAM_WAVEFORM_OFFSET:

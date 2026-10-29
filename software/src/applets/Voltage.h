@@ -122,11 +122,7 @@ private:
             gfxPrint(0, 15 + (ch * 20), OutputLabel(ch));
             gfxPrint(" ");
             int cv = voltage[ch] * VOLTAGE_INCREMENTS;
-            #ifdef VHEMISPHERE_OUTPUT_RANGE
-            gfxPrintVoltage(VHemisphere::output_pitch(cv));
-#else
-            gfxPrintVoltage(cv);
-#endif
+            gfxPrintOutputVoltage(cv);
             gfxPrint(0, 25 + (ch * 20), gate[ch] ? "  G-On" : "  G-Off");
 
             if (view[ch]) gfxInvert(0, 14 + (ch * 20), 7, 9);

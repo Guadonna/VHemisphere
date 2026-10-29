@@ -6,3 +6,7 @@ trap 'rm -f "$test_binary"' EXIT
 ${CXX:-g++} -std=c++17 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=undefined \
   software/test/vhemisphere/output_test.cpp software/src/src/extern/braids_quantizer.cpp -o "$test_binary"
 "$test_binary"
+
+${CXX:-g++} -std=c++17 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=undefined \
+  software/test/vhemisphere/applet_test.cpp -o "$test_binary"
+"$test_binary"

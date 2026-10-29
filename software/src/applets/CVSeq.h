@@ -688,11 +688,7 @@ private:
         y += 10;
         gfxPos(0, y);
         gfxPrint("CV ");
-        #ifdef VHEMISPHERE_OUTPUT_RANGE
-            gfxPrintVoltage(VHemisphere::output_pitch(v * CV_INCREMENT));
-#else
-            gfxPrintVoltage(v * CV_INCREMENT);
-#endif
+            gfxPrintOutputVoltage(v * CV_INCREMENT, false);
         if (cursor == CVSeqCursor::VALUE_CV) gfxSpicyCursor(18, y + 8, 42, "CV Value");
 
         y += 10;

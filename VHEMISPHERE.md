@@ -1,4 +1,4 @@
-# Development status: v0.2.1
+# Development status: v0.2.2
 
 See README.md for the implemented behavior and verification limits.
 The release is software-validated, not hardware-validated.
@@ -18,3 +18,14 @@ Upstream source is retained for attribution and shared dependencies; optional
 full-screen apps are not instantiated in this target. Hardware-specific warnings
 from upstream (including USB descriptor LTO declaration mismatch) remain; the
 release build passes without disabling diagnostics or TLS verification.
+
+Version 0.2.2 separates logical output bounds (+/-5 internal volts) from the
+physical DAC bias. This corrects early negative clipping in applets and the
+Voltage encoder range. Full-range generators use these bounds as well; their
+amplitudes may change compared with older patches. Input scaling is unchanged.
+
+Output labels now round once directly to centivolts. Parameter contributions
+are displayed before final clipping; the output monitor applies the limiter.
+EnsOscKey uses voltageToCode for both output and display (0.05..0.95 V).
+Host tests run the actual Voltage and AttenOff applet classes with simulated I/O
+and cover encoder endpoints, labels, preset restoration and bipolar input.
