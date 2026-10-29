@@ -11,4 +11,4 @@ def revision():
         return "uncommitted"
 
 env.Append(CPPDEFINES=[("OC_BUILD_TAG", '\\"' + revision() + '\\"')])
-env.Replace(PROGNAME="VHemisphere-v0.1.0-Teensy41")
+env.Replace(PROGNAME="VHemisphere-v0.2.0-Teensy40")

@@ -383,7 +383,7 @@ FLASHMEM void setup() {
   UI_timer.begin(UI_timer_ISR, OC_UI_TIMER_RATE);
   UI_timer.priority(OC_UI_TIMER_PRIO);
 
-#ifdef VHEMISPHERE_OUTPUT_RANGE
+#if defined(VHEMISPHERE_OUTPUT_RANGE) && defined(ARDUINO_TEENSY41)
   if (DAC_20Vpp || NorthernLightModular || !DAC8568_Uses_SPI) {
     while (true) {
       GRAPHICS_BEGIN_FRAME(true);

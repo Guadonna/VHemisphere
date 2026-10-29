@@ -17,7 +17,7 @@ namespace OC {
 #endif
 
   // 17 char width                  |                 |
-  const char * const RELEASE_NAME = "VHemisphere 0.1";
+  const char * const RELEASE_NAME = "VHemisphere 0.2";
   // TODO: array of alternate titles, one for every letter of the alphabet
 
 #if defined(VOR)

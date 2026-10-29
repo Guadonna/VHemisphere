@@ -12,7 +12,7 @@ namespace PhzConfig {
   using VALUE = uint64_t;
   using ConfigMap = std::unordered_map<KEY, VALUE>;
 
-  const char * const CONFIG_FILENAME = "VHEM.CFG";
+  const char * const CONFIG_FILENAME = "VHEM40.CFG";
 
   extern LittleFS_Program myfs;
 
@@ -35,7 +35,7 @@ namespace PhzConfig {
   // load, so a corrupt primary can be recovered instead of blocking boot
   // at the ConfirmReset prompt). Returns false on any I/O failure.
   bool backup_config();
-  const char * const BACKUP_FILENAME = "VHEM.BAK";
+  const char * const BACKUP_FILENAME = "VHEM40.BAK";
 
   void printDirectory(FS &fs = myfs);
   void printDirectory(File dir, int numSpaces);

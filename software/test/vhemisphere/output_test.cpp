@@ -3,6 +3,7 @@
 #include <cassert>
 #include <climits>
 #include <cstdio>
+#include <initializer_list>
 
 int main() {
   using namespace VHemisphere;
@@ -25,22 +26,25 @@ int main() {
     assert(millivolts(p) >= -1000 && millivolts(p) <= 1000);
   }
   // Traverse the exact wizard state helper used on-device: 8 channels x 3 points.
-  CalibrationCursor cursor{1, 0};
-  for (int ch = 0; ch < 8; ++ch) {
-    for (int point = 2; point <= 4; ++point) {
-      cursor = move_calibration(cursor, 1, 2, 17, 3);
-      assert(cursor.step == 2 + ch*2 && cursor.octave == point);
+  for (int channels : {4, 8}) {
+    const int last = 2*channels + 1;
+    CalibrationCursor cursor{1, 0};
+    for (int ch = 0; ch < channels; ++ch) {
+      for (int point = 2; point <= 4; ++point) {
+        cursor = move_calibration(cursor, 1, 2, last, 3);
+        assert(cursor.step == 2 + ch*2 && cursor.octave == point);
+      }
     }
-  }
-  cursor = move_calibration(cursor, 1, 2, 17, 3);
-  assert(cursor.step == 18);
-  for (int ch = 7; ch >= 0; --ch) {
-    for (int point = 4; point >= 2; --point) {
-      cursor = move_calibration(cursor, -1, 2, 17, 3);
-      assert(cursor.step == 2 + ch*2 && cursor.octave == point);
+    cursor = move_calibration(cursor, 1, 2, last, 3);
+    assert(cursor.step == last+1);
+    for (int ch = channels-1; ch >= 0; --ch) {
+      for (int point = 4; point >= 2; --point) {
+        cursor = move_calibration(cursor, -1, 2, last, 3);
+        assert(cursor.step == 2 + ch*2 && cursor.octave == point);
+      }
     }
+    assert(move_calibration(cursor, -1, 2, last, 3).step == 1);
   }
-  assert(move_calibration(cursor, -1, 2, 17, 3).step == 1);
   GateState gate;
   assert(!gate && !gate.high);
   gate.clock(17);
@@ -70,5 +74,5 @@ int main() {
   quantizer.Init(); quantizer.Configure(chromatic);
   assert(quantizer.Process(128) == 128);
   assert(calibrated(128, lo, zero, hi) == 30108);
-  puts("PASS: calibration endpoints, asymmetry, inverted tables, clipping, precision, monotonicity, real quantizer integration, gate/clock transitions, 24 calibration steps forward/backward");
+  puts("PASS: calibration endpoints, asymmetry, inverted tables, clipping, precision, monotonicity, real quantizer integration, gate/clock transitions, 12/24 calibration steps forward/backward");
 }

@@ -71,8 +71,13 @@ public:
   void SwitchToStep(int direction) {
 
 #ifdef VHEMISPHERE_OUTPUT_RANGE
+#ifdef ARDUINO_TEENSY41
+      constexpr auto last_dac_step = DAC_H_VOLT_HIGH;
+#else
+      constexpr auto last_dac_step = DAC_D_VOLT_HIGH;
+#endif
       const auto next = VHemisphere::move_calibration(
-          {calstate.step, current_octave}, direction, DAC_A_VOLT_MIN, DAC_H_VOLT_HIGH, DAC::kOctaveZero);
+          {calstate.step, current_octave}, direction, DAC_A_VOLT_MIN, last_dac_step, DAC::kOctaveZero);
       if (next.step == calstate.step) {
         current_octave = next.octave;
         calstate.encoder_value = OC::calibration_data.dac.calibrated_octaves[
@@ -679,7 +684,11 @@ void AppSettings::Process(OC::IOFrame *ioframe) {
 #ifdef VHEMISPHERE_OUTPUT_RANGE
   if (ioframe->outputs.calibration_bypass) {
     const DAC_CHANNEL channels[] = { DAC_CHANNEL_A, DAC_CHANNEL_B, DAC_CHANNEL_C,
-      DAC_CHANNEL_D, DAC_CHANNEL_E, DAC_CHANNEL_F, DAC_CHANNEL_G, DAC_CHANNEL_H };
+      DAC_CHANNEL_D
+#ifdef ARDUINO_TEENSY41
+      , DAC_CHANNEL_E, DAC_CHANNEL_F, DAC_CHANNEL_G, DAC_CHANNEL_H
+#endif
+    };
     for (int i = 0; i < DAC_CHANNEL_COUNT; ++i) {
       uint16_t value = OC::DAC::get_zero_offset(channels[i]);
       if (calstate.current_step->calibration_type == CALIBRATE_OCTAVE &&

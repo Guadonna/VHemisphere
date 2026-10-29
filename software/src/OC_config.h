@@ -1,3 +1,6 @@
+#if defined(VHEMISPHERE_OUTPUT_RANGE) && !defined(ARDUINO_TEENSY40)
+#error "VHemisphere 0.2 targets Teensy 4.0 only; use the matching release for other boards."
+#endif
 #ifndef OC_CONFIG_H_
 #define OC_CONFIG_H_
 

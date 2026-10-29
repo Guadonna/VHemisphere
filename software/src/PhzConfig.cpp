@@ -325,7 +325,7 @@ void eraseFiles(FS &fs)
   File root = fs.open("/");
   for (File file = root.openNextFile(); file; file = root.openNextFile()) {
     const String name = file.name();
-    const bool remove = !file.isDirectory() && name.startsWith("VHEM_") && name.endsWith(".DAT");
+    const bool remove = !file.isDirectory() && name.startsWith("VHEM40_") && name.endsWith(".DAT");
     file.close();
     if (remove) fs.remove(name.c_str());
   }

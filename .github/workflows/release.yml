@@ -5,7 +5,7 @@ on:
       tag:
         description: Existing release tag to build
         required: true
-        default: v0.1.0
+        default: v0.2.0
         type: string
 permissions:
   contents: write
@@ -37,19 +37,6 @@ jobs:
           cp software/.pio/build/VHemisphere/VHemisphere-*.hex release/
           cp README.md release/README.md
           (cd release && sha256sum *.hex README.md > SHA256SUMS)
-          cat > release-notes.md <<'NOTES'
-          Первая версия VHemisphere для O_C T4.1 rev3 / Teensy 4.1.
-
-          - Quadrants: 4 апплета, 8 CV-выходов; штатные входы.
-          - CV делится на 5 и ограничивается ±1 В; GateOut/ClockOut — 0/1 В.
-          - Калибровка −1, 0, +1 В; обновлённые подписи и расчётный индикатор выхода.
-          - Самостоятельный образ без multiboot, отдельные файлы настроек и пресетов.
-
-          Пройдены сборка Teensy 4.1 и host-тесты с UBSan: калибровочные таблицы, насыщение, разрешение, монотонность, реальный квантайзер, gate/clock и 24 точки калибровки в обоих направлениях.
-
-          Предварительный релиз: реальные напряжения, экран/периферия, шум и поведение при питании ещё не проверены на модуле. Перед подключением видеосинтезатора измерьте выходы и выполните калибровку. Ручная настройка ЦАП может выводить напряжение за ±1 В. Аудиоразъёмы не входят в диапазон CV. Варианты 20 Vpp и однополярные платы не поддерживаются. Импульсы, сформированные апплетом обычным CV-вызовом Out, обрабатываются как CV; фиксированные уровни относятся к GateOut/ClockOut.
-
-          Подробности установки, диапазонов и пресетов — в приложенном README.md. Контрольные суммы — SHA256SUMS.
-          NOTES
+          cp README.md release-notes.md
           gh release create "$RELEASE_TAG" release/* --verify-tag --prerelease \
-            --title "VHemisphere $RELEASE_TAG — CV ±1 В" --notes-file release-notes.md
+            --title "VHemisphere $RELEASE_TAG — Teensy 4.0, 4 CV" --notes-file release-notes.md

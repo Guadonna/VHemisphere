@@ -48,7 +48,7 @@ enum HEMISPHERE_SETTINGS {
 #ifdef __IMXRT1062__
 // TODO: consider separate, smaller files - this could get slow
 static constexpr int HEM_NR_OF_PRESETS = 50;
-static const char* const PRESET_FILENAME = "HEM_PRESETS.DAT";
+static const char* const PRESET_FILENAME = "VHEM40_PRESETS.DAT";
 #elif defined(MOAR_PRESETS)
 static constexpr int HEM_NR_OF_PRESETS = 16;
 #elif defined(CUSTOM_BUILD) && !defined(PEWPEWPEW)
@@ -797,6 +797,15 @@ public:
           gfxPrint(x, y+20, "Lvl=");
           if (att < 0) gfxPrint("-");
           graphics.printf("%d.%d%%", abs(att) / 10, abs(att) % 10);
+#ifdef VHEMISPHERE_OUTPUT_RANGE
+          const int out_ch = zoom_slot*2 + zoom_cursor-5;
+          const int other_x = x ? 0 : 64;
+          gfxPrint(other_x, y+10, HS::frame.output_gate[out_ch] ? "Gate 0/1V" : "Out +/-1V");
+          gfxPos(other_x, y+20);
+          gfxPrintVoltage(HS::frame.output_gate[out_ch]
+            ? (HS::frame.outputs[out_ch].get_target() ? ONE_OCTAVE : 0)
+            : VHemisphere::output_pitch(HS::frame.ViewOut(out_ch)));
+#endif
         }
       } else {
         if (CursorBlink()) {
